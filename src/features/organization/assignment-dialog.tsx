@@ -27,7 +27,8 @@ export default function AssignmentDialog({ targets, title, onClose }: { targets:
       {!devicesOnly && <TextField select label="Horario individual" value={scheduleId} onChange={(event) => setScheduleId(event.target.value)} helperText="Crea los roles en Horarios y reglas. La asignación individual tiene prioridad sobre el horario base.">
         <MenuItem value="">Conservar horario actual</MenuItem>
         <MenuItem value="inherit">Usar horario base de la sucursal</MenuItem>
-        {(schedules.data ?? []).filter((schedule) => !branchId || schedule.branchId === branchId).map((schedule) => <MenuItem key={schedule.id} value={schedule.id}>{schedule.name} · desde {schedule.effectiveFrom}</MenuItem>)}
+        {(schedules.data ?? []).filter((schedule) => (!branchId || schedule.branchId === branchId)
+          && (!schedule.supersededFrom || effectiveFrom < schedule.supersededFrom)).map((schedule) => <MenuItem key={schedule.id} value={schedule.id}>{schedule.name} · desde {schedule.effectiveFrom}</MenuItem>)}
       </TextField>}
       <TextField required type="date" label="Aplicar desde" value={effectiveFrom} onChange={(event) => setEffectiveFrom(event.target.value)} slotProps={{ inputLabel: { shrink: true } }} />
       <Alert severity="info">Las asignaciones anteriores a esta fecha se conservan. El reloj actual debe pertenecer a la sucursal del empleado.</Alert>

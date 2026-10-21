@@ -8,8 +8,8 @@ import Stack from '@mui/material/Stack'
 import { useState, type ReactNode } from 'react'
 import { getApiErrorMessage } from '../../shared/api/api-error'
 
-export default function EditorDialog({ title, children, onClose, onSave, saveLabel = 'Guardar' }: {
-  title: string; children: ReactNode; onClose: () => void; onSave: () => Promise<unknown>; saveLabel?: string
+export default function EditorDialog({ title, children, onClose, onSave, saveLabel = 'Guardar', saveDisabled = false }: {
+  title: string; children: ReactNode; onClose: () => void; onSave: () => Promise<unknown>; saveLabel?: string; saveDisabled?: boolean
 }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -27,7 +27,7 @@ export default function EditorDialog({ title, children, onClose, onSave, saveLab
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
           <Button disabled={busy} onClick={onClose}>Cancelar</Button>
-          <Button disabled={busy} type="submit" variant="contained">{busy ? 'Guardando…' : saveLabel}</Button>
+          <Button disabled={busy || saveDisabled} type="submit" variant="contained">{busy ? 'Guardando…' : saveLabel}</Button>
         </DialogActions>
       </form>
     </Dialog>

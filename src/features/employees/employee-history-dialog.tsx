@@ -11,6 +11,7 @@ import { httpClient } from '../../shared/api/http-client'
 import { getApiErrorMessage } from '../../shared/api/api-error'
 import PageLoading from '../../shared/ui/page-loading'
 import type { Employee } from './types/employee'
+import type { EmployeeScheduleVersion } from '../organization/employee-scheduling'
 
 export default function EmployeeHistoryDialog({ employee, onClose }: { employee: Employee; onClose: () => void }) {
   const history = useQuery({ queryKey: ['employee-history', employee.id], queryFn: async ({ signal }) => (await httpClient.get(`/employees/${employee.id}/history`, { signal })).data })
@@ -34,7 +35,13 @@ export default function EmployeeHistoryDialog({ employee, onClose }: { employee:
         {(history.data.statusEvents ?? []).map((event: { id: string; eventType: string; isActive: boolean; localDate: string; timeZone: string; previousTerminationDate?: string; terminationDate?: string }) => <Typography key={event.id} variant="body2">
           {event.localDate}: {event.eventType === 'initial' ? `Estado original: ${event.isActive ? 'Activo' : 'Dado de baja'}` : event.isActive ? 'Reactivado' : 'Dado de baja'} ({event.timeZone}){event.eventType === 'reactivated' && event.previousTerminationDate ? `. Baja anterior: ${event.previousTerminationDate}` : ''}{event.eventType === 'initial' && !event.isActive && event.terminationDate ? `. Baja original: ${event.terminationDate}` : ''}.
         </Typography>)}
-      <details>
+       <Typography variant="h3" component="h3">Cambios de horario y comida</Typography>
+       {(history.data.scheduleEvents ?? []).map((event: EmployeeScheduleVersion) => <Typography key={event.id} variant="body2">
+         Desde {event.effectiveFrom}: {event.workHours ? `${event.workHours.entryTime}–${event.workHours.exitTime}` : 'Jornada de la sucursal'}.
+         {' '}{event.meal ? event.meal.enabled ? `Comida ${event.meal.startTime}–${event.meal.endTime}, ${event.meal.durationMinutes} minutos.` : 'Sin movimientos de comida.' : 'Comida pendiente de configurar.'}
+         {' '}Margen de reconocimiento: {event.recognitionMarginMinutes} minutos.
+       </Typography>)}
+       <details>
         <summary>Respaldo original de la unificación y cambios de identificación</summary>
         <Typography component="pre" variant="caption" sx={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{JSON.stringify(history.data, null, 2)}</Typography>
       </details></>}

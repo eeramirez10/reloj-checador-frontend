@@ -26,7 +26,8 @@ export default function ScheduleDialog({ schedule, onClose }: { schedule?: WorkS
   const mutation = useOrganizationMutation(saveSchedule)
   function update<Key extends keyof ScheduleSettings>(key: Key, value: ScheduleSettings[Key]) { setSettings((current) => ({ ...current, [key]: value })) }
   return (
-    <EditorDialog title={schedule ? 'Crear versión de horario' : 'Crear horario'} onClose={onClose} onSave={() => mutation.mutateAsync({ branchId, name, effectiveFrom, isDefault, settings })}>
+    <EditorDialog title={schedule ? 'Crear versión de horario' : 'Crear horario'} onClose={onClose} onSave={() => mutation.mutateAsync({ branchId, name, effectiveFrom, isDefault,
+      settings: { ...settings, mealMode: isDefault ? 'individual' : 'schedule', ...(isDefault ? { mealEnabled: false } : {}) } })}>
       <TextField required label="Nombre del horario" value={name} onChange={(event) => setName(event.target.value)} placeholder="Por ejemplo: Administración · comida 14:00–15:00" />
       <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
         <TextField required select label="Sucursal" value={branchId} onChange={(event) => setBranchId(event.target.value)}>
@@ -43,8 +44,9 @@ export default function ScheduleDialog({ schedule, onClose }: { schedule?: WorkS
         <TextField required type="time" label="Entrada" value={settings.entryTime} onChange={(event) => update('entryTime', event.target.value)} slotProps={{ inputLabel: { shrink: true } }} />
         <TextField required type="time" label="Salida" value={settings.exitTime} onChange={(event) => update('exitTime', event.target.value)} slotProps={{ inputLabel: { shrink: true } }} />
       </Box>
-      <FormControlLabel control={<Switch checked={settings.mealEnabled} onChange={(event) => update('mealEnabled', event.target.checked)} />} label="Identificar salida y regreso de comida" />
-      {settings.mealEnabled && <>
+      {isDefault ? <Alert severity="info">La jornada se hereda desde la sucursal. La hora y duración de comida se configuran individualmente desde Empleados → Editar.</Alert>
+        : <FormControlLabel control={<Switch checked={settings.mealEnabled} onChange={(event) => update('mealEnabled', event.target.checked)} />} label="Identificar salida y regreso de comida" />}
+      {!isDefault && settings.mealEnabled && <>
         <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr 1fr' } }}>
           <TextField required type="time" label="Puede salir desde" value={settings.mealStart} onChange={(event) => update('mealStart', event.target.value)} slotProps={{ inputLabel: { shrink: true } }} />
           <TextField required type="time" label="Puede salir hasta" value={settings.mealEnd} onChange={(event) => update('mealEnd', event.target.value)} slotProps={{ inputLabel: { shrink: true } }} />

@@ -3,6 +3,7 @@ import type { DailyAttendance, Movement } from './types'
 export const movementLabels: Record<Movement, string> = {
   entry: 'Entrada', meal_departure: 'Salida a comer', meal_return: 'Regreso de comida',
   exit: 'Salida del trabajo', duplicate: 'Lectura repetida', unclassified: 'Sin clasificar',
+  outside_schedule: 'Fuera de horario',
 }
 export const dailyStatusLabels: Record<DailyAttendance['result']['status'], string> = {
   complete: 'Completo', incomplete: 'Incompleto', in_progress: 'En curso', ambiguous: 'Por identificar',

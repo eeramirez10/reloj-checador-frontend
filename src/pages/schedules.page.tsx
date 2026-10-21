@@ -60,10 +60,10 @@ export default function SchedulesPage() {
             <TableContainer component={Paper} variant="outlined"><Table sx={{ minWidth: 950 }} aria-label="Roles de horario">
               <TableHead><TableRow><TableCell>Horario</TableCell><TableCell>Sucursal</TableCell><TableCell>Jornada</TableCell><TableCell>Comida</TableCell><TableCell>Días</TableCell><TableCell>Vigencia</TableCell><TableCell>Acciones</TableCell></TableRow></TableHead>
               <TableBody>{(schedules.data ?? []).map((schedule) => <TableRow key={schedule.id}>
-                <TableCell><Stack spacing={0.5}><Typography variant="body2">{schedule.name}</Typography>{schedule.isDefault && <Chip label="Base de sucursal" size="small" variant="outlined" sx={{ alignSelf: 'flex-start' }} />}</Stack></TableCell>
+                <TableCell><Stack spacing={0.5}><Typography variant="body2">{schedule.name}</Typography>{schedule.isDefault && <Chip label={schedule.supersededFrom && schedule.supersededFrom <= today ? 'Versión histórica' : 'Base de sucursal'} size="small" variant="outlined" sx={{ alignSelf: 'flex-start' }} />}</Stack></TableCell>
                 <TableCell>{branchNames.get(schedule.branchId)}</TableCell>
                 <TableCell sx={{ whiteSpace: 'nowrap' }}>{schedule.settings.entryTime}–{schedule.settings.exitTime}</TableCell>
-                <TableCell>{schedule.settings.mealEnabled ? <Stack><Typography variant="body2">Salir {schedule.settings.mealStart}–{schedule.settings.mealEnd}</Typography><Typography color="text.secondary" variant="caption">{schedule.settings.mealDurationMinutes} min desde la salida real</Typography></Stack> : 'Sin movimientos de comida'}</TableCell>
+                <TableCell>{schedule.settings.mealMode === 'individual' ? 'Configurable en cada empleado' : schedule.settings.mealEnabled ? <Stack><Typography variant="body2">Salir {schedule.settings.mealStart}–{schedule.settings.mealEnd}</Typography><Typography color="text.secondary" variant="caption">{schedule.settings.mealDurationMinutes} min desde la salida real</Typography></Stack> : 'Sin movimientos de comida'}</TableCell>
                 <TableCell>{schedule.settings.workDays.map((day) => ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'][day - 1]).join(', ')}</TableCell>
                 <TableCell>{schedule.effectiveFrom}</TableCell>
                 <TableCell><Button size="small" onClick={() => setEditing(schedule)}>Nueva versión</Button></TableCell>

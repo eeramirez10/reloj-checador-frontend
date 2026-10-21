@@ -1,3 +1,5 @@
+import type { UserPhotoReference } from '../users/types/user-photo-reference'
+
 export interface Branch {
   id: string
   name: string
@@ -38,6 +40,9 @@ export interface ScheduleSettings {
   mealStart: string
   mealEnd: string
   mealDurationMinutes: number
+  mealMode?: 'schedule' | 'individual'
+  mealPending?: boolean
+  recognitionMarginMinutes?: number
 }
 export interface WorkSchedule {
   id: string
@@ -46,6 +51,7 @@ export interface WorkSchedule {
   effectiveFrom: string
   isDefault: boolean
   settings: ScheduleSettings
+  supersededFrom?: string | null
 }
 export interface AssignmentTargets {
   employeeIds?: string[]
@@ -59,7 +65,7 @@ export interface ScheduleAssignment {
   scheduleId: string | null
   effectiveFrom: string
 }
-export type Movement = 'entry' | 'meal_departure' | 'meal_return' | 'exit' | 'unclassified' | 'duplicate'
+export type Movement = 'entry' | 'meal_departure' | 'meal_return' | 'exit' | 'unclassified' | 'duplicate' | 'outside_schedule'
 export interface DailyAttendance {
   id: string
   subjectId: string
@@ -67,6 +73,7 @@ export interface DailyAttendance {
   deviceUserId?: string
   date: string
   branchId?: string
+  photo?: UserPhotoReference | null
   result: {
     name: string
     employeeNumber?: string
@@ -88,6 +95,11 @@ export interface DailyAttendance {
     counters: { arrival: number; meal: number }
     deductionDays: number
     policy?: PolicySettings
+    missingMovements?: Array<'entry' | 'meal_departure' | 'meal_return' | 'exit'>
+    mealConfigured?: boolean
+    policyConfigured?: boolean
+    scheduleSource?: 'branch' | 'individual' | 'legacy'
+    scheduleSettings?: ScheduleSettings
   }
 }
 export interface Deduction {

@@ -41,6 +41,7 @@ import PageHeader from '../shared/ui/page-header'
 import PageLoading from '../shared/ui/page-loading'
 
 const pageSize = 25
+type EmploymentStatusFilter = 'active' | 'inactive' | 'all'
 
 function EmployeeStatus({ employee }: { employee: Employee }) {
   return <Stack spacing={0.5} sx={{ alignItems: 'flex-start' }}>
@@ -82,6 +83,7 @@ export default function EmployeesPage() {
   const [search, setSearch] = useState('')
   const [branchId, setBranchId] = useState('')
   const [deviceId, setDeviceId] = useState('')
+  const [statusFilter, setStatusFilter] = useState<EmploymentStatusFilter>('active')
   const [page, setPage] = useState(1)
   const [selected, setSelected] = useState<Set<string>>(() => new Set())
   const [editing, setEditing] = useState<Employee | 'new' | null>(null)
@@ -93,11 +95,12 @@ export default function EmployeesPage() {
   const [notice, setNotice] = useState<{ severity: 'success' | 'error'; message: string } | null>(null)
   const tableRef = useRef<HTMLDivElement>(null)
   const data = employees.data ?? []
+  const statusFilteredEmployees = statusFilter === 'all' ? data : data.filter((employee) => employee.isActive === (statusFilter === 'active'))
   const scopedDevices = (devices.data ?? []).filter((device) => !branchId || device.branchId === branchId)
   const syncDeviceId = deviceId && deviceId !== 'unassigned' ? deviceId : scopedDevices.length === 1 ? scopedDevices[0].id : undefined
   const today = getToday()
   const normalized = search.trim().toLocaleLowerCase('es-MX')
-  const filtered = data.filter((employee) => {
+  const filtered = statusFilteredEmployees.filter((employee) => {
     if (tab !== 'all' && employee.identificationStatus !== tab) return false
     if (branchId && (branchId === 'unassigned' ? Boolean(employee.branchId) : employee.branchId !== branchId)) return false
     const currentClock = employee.clockRecords.find((record) => record.bindingStatus === 'active')
@@ -112,9 +115,14 @@ export default function EmployeesPage() {
     const photoRecord = [clock, ...employee.clockRecords].find((record) => record?.hasPhoto)
     const photoUser = photoRecord ? { deviceId: photoRecord.deviceId, userId: photoRecord.userId, name: employee.name, hasPhoto: photoRecord.hasPhoto } : null
     const assignment = assignments.data?.find((item) => item.employeeId === employee.id && item.effectiveFrom <= today)
-    const schedule = assignment?.scheduleId ? schedules.data?.find((item) => item.id === assignment.scheduleId)
-      : schedules.data?.find((item) => item.branchId === employee.branchId && item.isDefault && item.effectiveFrom <= today)
-    return { employee, clock, photoUser, schedule }
+    const date = getToday(branches.data?.find((branch) => branch.id === employee.branchId)?.timeZone)
+    const base = schedules.data?.find((item) => item.branchId === employee.branchId && item.isDefault && item.effectiveFrom <= date
+      && (!item.supersededFrom || date < item.supersededFrom))
+    const legacy = assignment?.scheduleId ? schedules.data?.find((item) => item.id === assignment.scheduleId) : undefined
+    const role = employee.scheduling ? base : legacy ?? base
+    const hours = employee.scheduling?.workHours ?? role?.settings
+    const scheduleLabel = hours ? `${employee.scheduling?.workHours ? 'Individual' : role?.name ?? 'Jornada'} · ${hours.entryTime}–${hours.exitTime}` : 'Sin horario'
+    return { employee, clock, photoUser, scheduleLabel }
   })
   const actions: EmployeeActions = { edit: setEditing, identify: setIdentifying, clock: setClockEmployee, assign: (employee) => setAssignIds([employee.id]), history: setHistory }
   const selectedEmployees = data.filter((employee) => selected.has(employee.id))
@@ -143,9 +151,9 @@ export default function EmployeesPage() {
     <Stack spacing={2}>
       {[employees, devices, branches, schedules, assignments].filter((query) => query.isError).map((query, index) => <Alert key={index} severity="error">{getApiErrorMessage(query.error)}</Alert>)}
       <Tabs value={tab} onChange={(_, value: string) => { setTab(value); resetSelection() }} aria-label="Identificación de empleados" variant="scrollable" allowScrollButtonsMobile>
-        <Tab value="confirmed" label={`Empleados (${data.filter((employee) => employee.identificationStatus === 'confirmed').length})`} />
-        <Tab value="pending" label={`Pendientes de identificar (${data.filter((employee) => employee.identificationStatus === 'pending').length})`} />
-        <Tab value="all" label={`Todos (${data.length})`} />
+        <Tab value="confirmed" label={`Empleados (${statusFilteredEmployees.filter((employee) => employee.identificationStatus === 'confirmed').length})`} />
+        <Tab value="pending" label={`Pendientes de identificar (${statusFilteredEmployees.filter((employee) => employee.identificationStatus === 'pending').length})`} />
+        <Tab value="all" label={`Todos (${statusFilteredEmployees.length})`} />
       </Tabs>
       <Paper variant="outlined" sx={{ p: 2 }}><Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
         <TextField fullWidth size="small" label="Buscar empleado" placeholder="Nombre, ID del reloj, RFC, NSS o tarjeta" value={search} onChange={(event) => { setSearch(event.target.value); setPage(1) }} />
@@ -154,6 +162,9 @@ export default function EmployeesPage() {
         </TextField>
         <TextField fullWidth select size="small" label="Reloj asignado" sx={{ maxWidth: { md: 280 } }} value={deviceId} onChange={(event) => { setDeviceId(event.target.value); resetSelection() }}>
           <MenuItem value="">Todos los relojes</MenuItem><MenuItem value="unassigned">Sin reloj asignado</MenuItem>{scopedDevices.map((device) => <MenuItem key={device.id} value={device.id}>{device.name}</MenuItem>)}
+        </TextField>
+        <TextField fullWidth select size="small" label="Estado" sx={{ maxWidth: { md: 180 } }} value={statusFilter} onChange={(event) => { setStatusFilter(event.target.value as EmploymentStatusFilter); resetSelection() }}>
+          <MenuItem value="active">Activos</MenuItem><MenuItem value="inactive">Inactivos</MenuItem><MenuItem value="all">Todos los estados</MenuItem>
         </TextField>
       </Stack>
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ mt: 2 }}>
@@ -177,21 +188,21 @@ export default function EmployeesPage() {
               onChange={(event) => setSelected((current) => { const next = new Set(current); for (const employee of visible) { if (event.target.checked) next.add(employee.id); else next.delete(employee.id) } return next })} /></TableCell>
             <TableCell sx={{ position: 'sticky', left: 48, zIndex: 2, bgcolor: 'background.paper' }}>Empleado</TableCell><TableCell>RFC / NSS</TableCell><TableCell>Sucursal</TableCell><TableCell>Reloj / ID</TableCell><TableCell>Horario</TableCell><TableCell>Estatus</TableCell><TableCell>Acciones</TableCell>
           </TableRow></TableHead>
-          <TableBody>{visibleRows.map(({ employee, clock, photoUser, schedule }) => {
+          <TableBody>{visibleRows.map(({ employee, clock, photoUser, scheduleLabel }) => {
             return <TableRow hover key={employee.id}>
               <TableCell padding="checkbox" sx={{ position: 'sticky', left: 0, zIndex: 1, bgcolor: 'background.paper' }}><Checkbox checked={selected.has(employee.id)} slotProps={{ input: { 'aria-label': `Seleccionar ${employee.name}` } }} onChange={(event) => toggleEmployee(employee.id, event.target.checked)} /></TableCell>
               <TableCell sx={{ minWidth: 240, position: 'sticky', left: 48, zIndex: 1, bgcolor: 'background.paper' }}><EmployeeIdentity employee={employee} photoUser={photoUser} onPhoto={setPhoto} /></TableCell>
               <TableCell><Stack><Typography variant="body2">{employee.rfc || '—'}</Typography><Typography variant="caption" color="text.secondary">{employee.imss || '—'}</Typography></Stack></TableCell>
               <TableCell>{employee.branchName || 'Sin asignar'}</TableCell>
               <TableCell>{clock ? <Stack><Typography variant="body2">{clock.deviceName}</Typography><Typography variant="caption" color="text.secondary">ID {clock.userId}</Typography></Stack> : 'Sin reloj asignado'}</TableCell>
-              <TableCell>{schedule?.name || 'Sin horario'}</TableCell>
+              <TableCell>{scheduleLabel}</TableCell>
               <TableCell><EmployeeStatus employee={employee} /></TableCell>
               <TableCell><EmployeeActionButtons employee={employee} actions={actions} /></TableCell>
             </TableRow>
           })}{!visible.length && <TableRow><TableCell colSpan={8}>No hay empleados con estos filtros. Agrega una ficha o sincroniza los registros de un reloj.</TableCell></TableRow>}</TableBody>
         </Table></TableContainer>
         <Stack spacing={1.5} sx={{ display: { xs: 'flex', md: 'none' } }}>
-          {visibleRows.map(({ employee, clock, photoUser, schedule }) => <Paper key={employee.id} variant="outlined" sx={{ p: 2 }}>
+          {visibleRows.map(({ employee, clock, photoUser, scheduleLabel }) => <Paper key={employee.id} variant="outlined" sx={{ p: 2 }}>
             <Stack spacing={1.25}>
               <Stack direction="row" spacing={0.5} sx={{ alignItems: 'flex-start' }}>
                 <Checkbox checked={selected.has(employee.id)} slotProps={{ input: { 'aria-label': `Seleccionar ${employee.name}` } }} onChange={(event) => toggleEmployee(employee.id, event.target.checked)} />
@@ -200,7 +211,7 @@ export default function EmployeesPage() {
               <EmployeeStatus employee={employee} />
               <Typography variant="body2">Sucursal: {employee.branchName || 'Sin asignar'}</Typography>
               <Typography variant="body2">Reloj: {clock ? `${clock.deviceName}, ID ${clock.userId}` : 'Sin reloj asignado'}</Typography>
-              <Typography variant="caption" color="text.secondary">Horario: {schedule?.name || 'Sin horario'}</Typography>
+              <Typography variant="caption" color="text.secondary">Horario: {scheduleLabel}</Typography>
               <Typography variant="caption" color="text.secondary">RFC: {employee.rfc || '—'}. NSS: {employee.imss || '—'}.</Typography>
               <EmployeeActionButtons employee={employee} actions={actions} />
             </Stack>

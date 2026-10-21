@@ -17,7 +17,7 @@ export function useDeductions(filters: ReportFilters) { return useQuery({ queryK
 export function useOrganizationMutation<T>(mutationFn: (input: T) => Promise<unknown>) {
   const client = useQueryClient()
   return useMutation({ mutationFn, onSuccess: async () => {
-    await Promise.all(['branches', 'branch-policies', 'work-schedules', 'schedule-assignments', 'employees', 'employee-history', 'device-users', 'devices', 'attendance', 'daily-attendance', 'deductions']
+    await Promise.all(['branches', 'branch-policies', 'work-schedules', 'schedule-assignments', 'employee-scheduling', 'employees', 'employee-history', 'device-users', 'devices', 'attendance', 'daily-attendance', 'deductions']
       .map((key) => client.invalidateQueries({ queryKey: [key] })))
   } })
 }

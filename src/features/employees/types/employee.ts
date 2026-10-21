@@ -43,6 +43,7 @@ export interface Employee {
   isActive: boolean
   originalName?: string
   nameSplitMethod?: string
+  scheduling?: Omit<EmployeeScheduleInput, 'expectedVersionId'> & { versionId: string }
 }
 
 export interface EmployeeFilters {
@@ -52,3 +53,4 @@ export interface EmployeeFilters {
   limit?: number
   identificationStatus?: 'confirmed' | 'pending'
 }
+import type { EmployeeScheduleInput } from '../../organization/employee-scheduling'

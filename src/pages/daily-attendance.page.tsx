@@ -1,5 +1,6 @@
 import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded'
 import Alert from '@mui/material/Alert'
+import Avatar from '@mui/material/Avatar'
 import Button from '@mui/material/Button'
 import Chip from '@mui/material/Chip'
 import Dialog from '@mui/material/Dialog'
@@ -24,6 +25,8 @@ import { getToday, recalculateAttendance, useBranches, useDailyAttendance, useDe
 import { dailyStatusLabels, formatAttendanceTime, movementLabels } from '../features/organization/attendance-labels'
 import type { DailyAttendance } from '../features/organization/types'
 import { defaultTimeZone, getTimeZoneLabel } from '../features/organization/time-zones'
+import type { UserPhotoReference } from '../features/users/types/user-photo-reference'
+import UserPhotoDialog, { UserPhotoAvatar } from '../features/users/user-photo-dialog/user-photo-dialog'
 import { getApiErrorMessage } from '../shared/api/api-error'
 import PageHeader from '../shared/ui/page-header'
 import PageLoading from '../shared/ui/page-loading'
@@ -34,6 +37,8 @@ function DayDetails({ day, onClose }: { day: DailyAttendance; onClose: () => voi
     <DialogContent dividers>
       <Stack spacing={2}>
         <Typography variant="body2">{day.result.branchName || 'Sin sucursal'} · {day.result.scheduleName || 'Sin horario'} · {day.result.timeZone}</Typography>
+        {day.result.scheduleSettings && <Typography variant="body2">Jornada {day.result.scheduleSettings.entryTime}–{day.result.scheduleSettings.exitTime} ({day.result.scheduleSource === 'branch' ? 'sucursal' : 'individual'}). Margen de reconocimiento: {day.result.scheduleSettings.recognitionMarginMinutes ?? 30} minutos.</Typography>}
+        {day.result.policyConfigured === false && <Alert severity="info">La jornada se identifica por horarios. No hay reglas de retardos vigentes para esta fecha; no se generan sanciones de esa política.</Alert>}
         {day.result.issues.map((issue) => <Alert key={issue} severity="warning">{issue}</Alert>)}
         {day.result.incidents.map((incident) => <Alert key={incident.kind} severity="warning">{incident.kind === 'arrival' ? 'Llegada tarde' : incident.kind === 'meal_departure' ? 'Salida a comer fuera de rango' : 'Regreso de comida tarde'}: {incident.minutes} minutos respecto a la hora prevista.</Alert>)}
         <Table size="small" aria-label="Detalle de movimientos"><TableHead><TableRow><TableCell>Fecha y hora local</TableCell><TableCell>Movimiento identificado</TableCell></TableRow></TableHead>
@@ -52,6 +57,7 @@ export default function DailyAttendancePage() {
   const [search, setSearch] = useState('')
   const [tab, setTab] = useState(0)
   const [detail, setDetail] = useState<DailyAttendance | null>(null)
+  const [photo, setPhoto] = useState<UserPhotoReference | null>(null)
   const branches = useBranches()
   const timeZone = branches.data?.find((branch) => branch.id === branchId)?.timeZone ?? defaultTimeZone
   const filters = { from, to, branchId: branchId || undefined }
@@ -90,13 +96,17 @@ export default function DailyAttendancePage() {
           <TableHead><TableRow><TableCell>Fecha / persona</TableCell><TableCell>Entrada</TableCell><TableCell>Salida a comer</TableCell><TableCell>Regreso de comida</TableCell><TableCell>Salida</TableCell><TableCell>Estatus</TableCell><TableCell>Retardos del día</TableCell><TableCell>Acumulados llegada / comida</TableCell><TableCell>Descuento</TableCell><TableCell>Detalle</TableCell></TableRow></TableHead>
           <TableBody>{visible.map((day) => {
             const result = day.result
+            const photoUser = day.photo ? { ...day.photo, name: result.name } : null
             const time = (value?: string) => formatAttendanceTime(value, result.timeZone)
             return <TableRow hover key={day.id}>
-              <TableCell><Stack><Typography variant="caption" color="text.secondary">{day.date} · {result.branchName || 'Sin sucursal'}</Typography><Typography variant="body2" sx={{ fontWeight: 500 }}>{result.name}</Typography><Typography variant="caption" color="text.secondary">{result.employeeNumber ? `Empleado ${result.employeeNumber}` : `ID reloj ${result.userIds.join(', ')}`}</Typography></Stack></TableCell>
+              <TableCell><Stack direction="row" spacing={1.25} sx={{ alignItems: 'center' }}>
+                {photoUser ? <UserPhotoAvatar user={photoUser} onClick={() => setPhoto(photoUser)} /> : <Avatar sx={{ width: 36, height: 36 }}>{result.name.slice(0, 1)}</Avatar>}
+                <Stack><Typography variant="caption" color="text.secondary">{day.date} · {result.branchName || 'Sin sucursal'}</Typography><Typography variant="body2" sx={{ fontWeight: 500 }}>{result.name}</Typography><Typography variant="caption" color="text.secondary">{result.employeeNumber ? `Empleado ${result.employeeNumber}` : `ID reloj ${result.userIds.join(', ')}`}</Typography></Stack>
+              </Stack></TableCell>
               <TableCell>{time(result.entry)}</TableCell><TableCell>{time(result.mealDeparture)}</TableCell>
               <TableCell><Stack><Typography variant="body2">{time(result.mealReturn)}</Typography>{result.expectedMealReturn && <Typography variant="caption" color="text.secondary">Previsto {time(result.expectedMealReturn)}</Typography>}{result.mealMinutes !== undefined && <Typography variant="caption" color="text.secondary">{result.mealMinutes} min</Typography>}</Stack></TableCell>
               <TableCell>{time(result.exit)}</TableCell>
-              <TableCell><Chip size="small" variant="outlined" color={result.status === 'complete' ? 'success' : result.status === 'ambiguous' || result.status === 'incomplete' ? 'warning' : 'default'} label={dailyStatusLabels[result.status]} /></TableCell>
+              <TableCell><Chip size="small" variant="outlined" color={result.status === 'complete' ? 'success' : result.status === 'ambiguous' || result.status === 'incomplete' ? 'warning' : 'default'} label={result.status === 'unconfigured' && result.scheduleSettings?.mealPending ? 'Comida por configurar' : dailyStatusLabels[result.status]} /></TableCell>
               <TableCell>{result.incidents.length ? <Chip size="small" color="warning" label={result.incidents.length} /> : '0'}</TableCell>
               <TableCell>{result.counters.arrival} / {result.counters.meal}</TableCell><TableCell>{result.deductionDays ? `${result.deductionDays} día(s)` : '—'}</TableCell>
               <TableCell><Button size="small" onClick={() => setDetail(day)}>Ver</Button></TableCell>
@@ -114,5 +124,6 @@ export default function DailyAttendancePage() {
       </Table></TableContainer>}
     </Stack>
     {detail && <DayDetails day={detail} onClose={() => setDetail(null)} />}
+    <UserPhotoDialog key={photo ? `${photo.deviceId}:${photo.userId}` : 'closed'} user={photo} onClose={() => setPhoto(null)} />
   </>
 }

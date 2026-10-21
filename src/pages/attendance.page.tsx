@@ -49,9 +49,10 @@ const punchStateLabels: Record<number, string> = {
   5: 'Salida de tiempo extra',
 }
 
-function getPunchStateColor(state: number | undefined): 'default' | 'success' | 'warning' {
-  if (state === 0 || state === 3 || state === 4) return 'success'
-  if (state === 1 || state === 2 || state === 5) return 'warning'
+function getMovementColor(movement: Movement | undefined): 'default' | 'success' | 'warning' | 'error' {
+  if (movement === 'entry' || movement === 'meal_return') return 'success'
+  if (movement === 'exit' || movement === 'meal_departure') return 'warning'
+  if (movement === 'outside_schedule' || movement === 'unclassified') return 'error'
   return 'default'
 }
 
@@ -152,15 +153,14 @@ function AttendanceDay({ date, logs, deviceNames, onOpenPhoto, movements, timeZo
                    <TableCell><Stack><Typography variant="body2">{deviceNames.get(log.deviceId) ?? 'Reloj no disponible'}</Typography><Typography variant="caption" color="text.secondary">{log.branchName || 'Sin sucursal'}</Typography></Stack></TableCell>
                   <TableCell>
                     <Chip
-                      color={getPunchStateColor(log.punchState)}
-                      label={movements.has(log.id) ? movementLabels[movements.get(log.id)!] : log.punchState === undefined
-                        ? 'Sin estado'
-                        : punchStateLabels[log.punchState] ?? `Estado ${log.punchState} sin identificar`}
+                      color={getMovementColor(movements.get(log.id))}
+                      label={movements.has(log.id) ? movementLabels[movements.get(log.id)!] : 'Pendiente de clasificación'}
                       size="small"
                       variant="outlined"
                     />
                   </TableCell>
-                  <TableCell>{log.verificationType === undefined ? '—' : `Método ${log.verificationType}`}</TableCell>
+                  <TableCell><Stack><Typography variant="body2">{log.verificationType === undefined ? '—' : `Método ${log.verificationType}`}</Typography>
+                    <Typography variant="caption" color="text.secondary">Marcado en reloj: {log.punchState === undefined ? 'Sin estado' : punchStateLabels[log.punchState] ?? `Estado ${log.punchState}`}</Typography></Stack></TableCell>
                 </TableRow>
               )
             })}

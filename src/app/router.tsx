@@ -37,6 +37,10 @@ export const router = createBrowserRouter([
         lazy: async () => { const { default: Component } = await import('../pages/daily-attendance.page'); return { Component } },
       },
       {
+        path: 'attendance-cards',
+        lazy: async () => { const { default: Component } = await import('../pages/attendance-cards.page'); return { Component } },
+      },
+      {
         path: 'attendance',
         lazy: async () => {
           const { default: Component } = await import('../pages/attendance.page')

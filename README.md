@@ -56,6 +56,22 @@ En **Empleados → Opciones** se agrupan **Asistencia**, Editar, Reloj, Asignar 
 
 La tarjeta muestra los datos del empleado y todos los días del rango con jornada histórica, entrada, salida a comer, regreso, salida laboral, horas y observaciones. Distingue descansos, días sin registros y fechas pendientes. **Ver marcas** conserva cada lectura original, incluidas las repetidas. El resumen separa retardos de llegada y comida, salidas anticipadas y jornadas por revisar. Los totales incluyen únicamente días cuyo tiempo trabajado puede calcularse; un día sin registros no se convierte automáticamente en falta ni descuento.
 
+## Tarjetas de asistencia por sucursal
+
+En **Asistencia → Tarjetas de asistencia** (`/attendance-cards`) se consulta el reporte conjunto. Sucursal, Estado del empleado (Activos/Inactivos), Desde y Hasta comienzan vacíos. **Consultar** permanece deshabilitado hasta completar los filtros con un periodo válido de hasta 366 días. El reporte se carga únicamente al pulsar Consultar; cambiar un filtro limpia el resultado y cancela la consulta pendiente. Volver a consultar actualiza el reporte, incluso con la misma selección.
+
+La selección utiliza la sucursal y el estado actuales de la ficha. Cada tarjeta conserva el historial de jornadas de sus fechas y utiliza el mismo formato y cálculo individual. Se incluyen empleados sin registros. El resultado muestra cinco tarjetas por página y permite recorrer todos los empleados coincidentes; cada cambio de página solicita un nuevo lote. Si no hay empleados, se muestra **No hay empleados para los filtros seleccionados**. Al recargar la página vuelve al estado inicial vacío.
+
+## Exportar tarjetas a PDF
+
+La tarjeta individual y el reporte por sucursal incluyen **Exportar PDF** cuando hay datos consultados. El PDF utiliza **Carta vertical**, con una tarjeta nueva por empleado, tabla, observaciones, totales y resumen. Las continuaciones repiten el encabezado del empleado y las columnas de la tabla; las páginas se numeran en el documento completo. Los tiempos desconocidos permanecen como guion y los totales incluyen solo jornadas calculables.
+
+Al terminar aparece **PDF generado**, con nombre/tamaño y enlaces **Descargar PDF** y **Ver PDF**. El archivo permanece disponible aunque el navegador rechace la descarga automática; los enlaces usan una acción directa del usuario. Consultar de nuevo, cambiar filtros o salir de la página libera el archivo anterior. Los errores se muestran junto al botón de exportación.
+
+La exportación de sucursal obtiene todas las tarjetas de los filtros aplicados desde `/attendance/cards/export`, en una sola instantánea, incluyendo empleados de las demás páginas. Se genera un único archivo. **Cancelar exportación**, modificar filtros, consultar otro periodo o salir de la página cancela la operación pendiente y evita descargar un archivo parcial o de una selección anterior.
+
+Se utilizan `jspdf` 4.2.1 y `jspdf-autotable` 5.0.7, cargados bajo demanda. Los archivos TTF de Public Sans regular/negrita provienen de `@expo-google-fonts/public-sans` 0.4.2 (solo recursos tipográficos, sin dependencias de Expo), se sirven con la aplicación y se incrustan para conservar acentos y ñ. Las licencias de los paquetes son MIT y OFL-1.1 para la tipografía.
+
 ## Verificaciones
 
 ```bash

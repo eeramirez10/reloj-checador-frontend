@@ -32,9 +32,8 @@ export default function AssignmentsPage() {
   const [selected, setSelected] = useState<Set<string>>(() => new Set())
   const [page, setPage] = useState(1)
   const [targets, setTargets] = useState<AssignmentTargets | null>(null)
-  const today = getToday()
   const people = (employees.data ?? []).map((employee) => ({ id: employee.id, name: employee.name, number: employee.employeeNumber,
-    branchId: employee.branchId, identificationStatus: employee.identificationStatus,
+    branchId: employee.branchId, identificationStatus: employee.identificationStatus, scheduling: employee.scheduling,
     clockIds: employee.clockRecords.filter((record) => record.bindingStatus === 'active').map((record) => record.userId).join(', '),
   })).sort((a, b) => a.name.localeCompare(b.name, 'es-MX'))
   const normalized = search.trim().toLocaleLowerCase('es-MX')
@@ -49,7 +48,7 @@ export default function AssignmentsPage() {
   }
   return (
     <>
-      <PageHeader title="Asignaciones" description="Asigna sucursal y horario individual a una o varias fichas de empleado."
+      <PageHeader title="Asignaciones" description="Asigna sucursales o restablece la jornada heredada de una o varias personas."
         action={<Button disabled={selected.size === 0} variant="contained" onClick={() => openAssignment(selected)}>Asignar a seleccionados ({selected.size})</Button>} />
       <Stack spacing={2}>
         {queries.filter((query) => query.isError).map((query, index) => <Alert key={index} severity="error">{getApiErrorMessage(query.error)}</Alert>)}
@@ -68,13 +67,16 @@ export default function AssignmentsPage() {
               <TableCell>Persona</TableCell><TableCell>IDs en relojes</TableCell><TableCell>Sucursal</TableCell><TableCell>Horario vigente</TableCell><TableCell>Acciones</TableCell>
             </TableRow></TableHead>
             <TableBody>{visible.map((person) => {
+              const today = getToday(branches.data?.find((branch) => branch.id === person.branchId)?.timeZone)
               const assignment = assignments.data?.find((item) => (item.employeeId === person.id || item.deviceUserId === person.id) && item.effectiveFrom <= today)
-              const schedule = assignment?.scheduleId ? scheduleMap.get(assignment.scheduleId) : schedules.data?.find((item) => item.branchId === person.branchId && item.isDefault && item.effectiveFrom <= today)
+              const base = schedules.data?.find((item) => item.branchId === person.branchId && item.isDefault && item.effectiveFrom <= today && (!item.supersededFrom || today < item.supersededFrom))
+              const schedule = person.scheduling ? base : (assignment?.scheduleId ? scheduleMap.get(assignment.scheduleId) : undefined) ?? base
+              const hours = person.scheduling?.workHours ?? schedule?.settings
               return <TableRow key={person.id} hover>
                 <TableCell padding="checkbox"><Checkbox checked={selected.has(person.id)} slotProps={{ input: { 'aria-label': `Seleccionar ${person.name}` } }} onChange={(event) => setSelected((current) => { const next = new Set(current); if (event.target.checked) next.add(person.id); else next.delete(person.id); return next })} /></TableCell>
                 <TableCell><Stack><Typography variant="body2" sx={{ fontWeight: 500 }}>{person.name}</Typography><Typography variant="caption" color="text.secondary">{person.identificationStatus === 'pending' ? 'Pendiente de identificar' : person.number || person.id}</Typography></Stack></TableCell>
                 <TableCell>{person.clockIds || 'Sin reloj asignado'}</TableCell><TableCell>{branchNames.get(person.branchId ?? '') || 'Sin asignar'}</TableCell>
-                <TableCell><Stack><Typography variant="body2">{schedule?.name || 'Sin horario'}</Typography>{assignment && <Typography variant="caption" color="text.secondary">Desde {assignment.effectiveFrom}</Typography>}</Stack></TableCell>
+                <TableCell><Stack><Typography variant="body2">{hours ? `${person.scheduling?.workHours ? 'Horario individual' : schedule?.name ?? 'Jornada'} · ${hours.entryTime}–${hours.exitTime}` : 'Sin horario'}</Typography>{assignment && <Typography variant="caption" color="text.secondary">Desde {assignment.effectiveFrom}</Typography>}</Stack></TableCell>
                 <TableCell><Button size="small" onClick={() => openAssignment(new Set([person.id]))}>Asignar</Button></TableCell>
               </TableRow>
             })}{!visible.length && <TableRow><TableCell colSpan={6}>No hay personas con estos filtros.</TableCell></TableRow>}</TableBody>

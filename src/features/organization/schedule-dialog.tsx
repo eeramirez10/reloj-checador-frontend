@@ -21,14 +21,14 @@ export default function ScheduleDialog({ schedule, onClose }: { schedule?: WorkS
   const [effectiveFrom, setEffectiveFrom] = useState(getToday)
   const [isDefault, setIsDefault] = useState(schedule?.isDefault ?? false)
   const [settings, setSettings] = useState<ScheduleSettings>(schedule?.settings ?? {
-    workDays: [1, 2, 3, 4, 5], entryTime: '08:30', exitTime: '18:00', mealEnabled: true, mealStart: '14:00', mealEnd: '15:00', mealDurationMinutes: 60,
+    workDays: [1, 2, 3, 4, 5], entryTime: '08:30', exitTime: '17:30', mealEnabled: false, mealStart: '00:00', mealEnd: '00:00', mealDurationMinutes: 60,
   })
   const mutation = useOrganizationMutation(saveSchedule)
   function update<Key extends keyof ScheduleSettings>(key: Key, value: ScheduleSettings[Key]) { setSettings((current) => ({ ...current, [key]: value })) }
   return (
     <EditorDialog title={schedule ? 'Crear versión de horario' : 'Crear horario'} onClose={onClose} onSave={() => mutation.mutateAsync({ branchId, name, effectiveFrom, isDefault,
-      settings: { ...settings, mealMode: isDefault ? 'individual' : 'schedule', ...(isDefault ? { mealEnabled: false } : {}) } })}>
-      <TextField required label="Nombre del horario" value={name} onChange={(event) => setName(event.target.value)} placeholder="Por ejemplo: Administración · comida 14:00–15:00" />
+      settings: { workDays: settings.workDays, entryTime: settings.entryTime, exitTime: settings.exitTime } })}>
+      <TextField required label="Nombre del horario" value={name} onChange={(event) => setName(event.target.value)} placeholder="Por ejemplo: Administración · jornada de trabajo" />
       <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
         <TextField required select label="Sucursal" value={branchId} onChange={(event) => setBranchId(event.target.value)}>
           {(branches.data ?? []).filter((branch) => branch.active || branch.id === branchId).map((branch) => <MenuItem key={branch.id} value={branch.id}>{branch.name}</MenuItem>)}
@@ -44,16 +44,7 @@ export default function ScheduleDialog({ schedule, onClose }: { schedule?: WorkS
         <TextField required type="time" label="Entrada" value={settings.entryTime} onChange={(event) => update('entryTime', event.target.value)} slotProps={{ inputLabel: { shrink: true } }} />
         <TextField required type="time" label="Salida" value={settings.exitTime} onChange={(event) => update('exitTime', event.target.value)} slotProps={{ inputLabel: { shrink: true } }} />
       </Box>
-      {isDefault ? <Alert severity="info">La jornada se hereda desde la sucursal. La hora y duración de comida se configuran individualmente desde Empleados → Editar.</Alert>
-        : <FormControlLabel control={<Switch checked={settings.mealEnabled} onChange={(event) => update('mealEnabled', event.target.checked)} />} label="Identificar salida y regreso de comida" />}
-      {!isDefault && settings.mealEnabled && <>
-        <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr 1fr' } }}>
-          <TextField required type="time" label="Puede salir desde" value={settings.mealStart} onChange={(event) => update('mealStart', event.target.value)} slotProps={{ inputLabel: { shrink: true } }} />
-          <TextField required type="time" label="Puede salir hasta" value={settings.mealEnd} onChange={(event) => update('mealEnd', event.target.value)} slotProps={{ inputLabel: { shrink: true } }} />
-          <TextField required type="number" label="Duración (minutos)" value={settings.mealDurationMinutes} onChange={(event) => update('mealDurationMinutes', Number(event.target.value))} slotProps={{ htmlInput: { min: 1, max: 240 } }} />
-        </Box>
-        <Alert severity="info">El regreso esperado se calcula desde la salida real. Salir a las 14:30 con 60 minutos de comida permite regresar a las 15:30, más la tolerancia de la sucursal.</Alert>
-      </>}
+      <Alert severity="info">Este horario define únicamente la jornada laboral. La comida se detecta automáticamente con cuatro checadas o se configura individualmente desde Empleados → Editar.</Alert>
       {schedule && <Typography color="text.secondary" variant="body2">Se creará una versión nueva. Asígnala a las personas que deban usarla; las asignaciones de la versión anterior se conservan.</Typography>}
     </EditorDialog>
   )

@@ -39,12 +39,15 @@ function DayDetails({ day, onClose }: { day: DailyAttendance; onClose: () => voi
         <Typography variant="body2">{day.result.branchName || 'Sin sucursal'} · {day.result.scheduleName || 'Sin horario'} · {day.result.timeZone}</Typography>
         {day.result.scheduleSettings && <Typography variant="body2">Jornada {day.result.scheduleSettings.entryTime}–{day.result.scheduleSettings.exitTime} ({day.result.scheduleSource === 'branch' ? 'sucursal' : 'individual'}). Margen de reconocimiento: {day.result.scheduleSettings.recognitionMarginMinutes ?? 30} minutos.</Typography>}
         {day.result.policyConfigured === false && <Alert severity="info">La jornada se identifica por horarios. No hay reglas de retardos vigentes para esta fecha; no se generan sanciones de esa política.</Alert>}
+        {day.result.mealDetection === 'automatic' && <Alert severity="info">Comida detectada automáticamente por las checadas, sin horario fijo ni retardos de comida.</Alert>}
+        {day.result.mealDetection === 'configured' && day.result.scheduleSettings && <Typography variant="body2">Comida {day.result.scheduleSettings.mealSource === 'branch' ? 'de sucursal' : 'individual'}: {day.result.scheduleSettings.mealStart}–{day.result.scheduleSettings.mealEnd}, {day.result.scheduleSettings.mealDurationMinutes} minutos.</Typography>}
         {day.result.issues.map((issue) => <Alert key={issue} severity="warning">{issue}</Alert>)}
         {day.result.incidents.map((incident) => <Alert key={incident.kind} severity="warning">{incident.kind === 'arrival' ? 'Llegada tarde' : incident.kind === 'meal_departure' ? 'Salida a comer fuera de rango' : 'Regreso de comida tarde'}: {incident.minutes} minutos respecto a la hora prevista.</Alert>)}
         <Table size="small" aria-label="Detalle de movimientos"><TableHead><TableRow><TableCell>Fecha y hora local</TableCell><TableCell>Movimiento identificado</TableCell></TableRow></TableHead>
           <TableBody>{day.result.punches.map((punch) => <TableRow key={punch.id}><TableCell>{punch.localTime}</TableCell><TableCell>{movementLabels[punch.movement]}</TableCell></TableRow>)}</TableBody></Table>
         <Typography variant="body2" color="text.secondary">Tiempo trabajado: {day.result.workedMinutes === undefined ? 'Pendiente de completar movimientos' : `${Math.floor(day.result.workedMinutes / 60)} h ${day.result.workedMinutes % 60} min`}.</Typography>
-        {day.result.policy && <Typography variant="body2" color="text.secondary">Tolerancia de entrada: {day.result.policy.entryToleranceMinutes} min. Tolerancia de comida: {day.result.policy.mealToleranceMinutes} min. Descuento al superar {day.result.policy.entryAllowedTardies} retardos de llegada o {day.result.policy.mealAllowedTardies} de comida.</Typography>}
+        {day.result.policy && <Typography variant="body2" color="text.secondary">Tolerancia de entrada: {day.result.policy.entryToleranceMinutes} min. Descuento al superar {day.result.policy.entryAllowedTardies} retardos de llegada.
+          {day.result.mealDetection === 'configured' && ` Tolerancia de comida: ${day.result.policy.mealToleranceMinutes} min. Descuento al superar ${day.result.policy.mealAllowedTardies} retardos de comida.`}</Typography>}
       </Stack>
     </DialogContent><DialogActions><Button onClick={onClose}>Cerrar</Button></DialogActions>
   </Dialog>
@@ -106,7 +109,8 @@ export default function DailyAttendancePage() {
               <TableCell>{time(result.entry)}</TableCell><TableCell>{time(result.mealDeparture)}</TableCell>
               <TableCell><Stack><Typography variant="body2">{time(result.mealReturn)}</Typography>{result.expectedMealReturn && <Typography variant="caption" color="text.secondary">Previsto {time(result.expectedMealReturn)}</Typography>}{result.mealMinutes !== undefined && <Typography variant="caption" color="text.secondary">{result.mealMinutes} min</Typography>}</Stack></TableCell>
               <TableCell>{time(result.exit)}</TableCell>
-              <TableCell><Chip size="small" variant="outlined" color={result.status === 'complete' ? 'success' : result.status === 'ambiguous' || result.status === 'incomplete' ? 'warning' : 'default'} label={result.status === 'unconfigured' && result.scheduleSettings?.mealPending ? 'Comida por configurar' : dailyStatusLabels[result.status]} /></TableCell>
+              <TableCell><Stack spacing={0.5} sx={{ alignItems: 'flex-start' }}><Chip size="small" variant="outlined" color={result.status === 'complete' ? 'success' : result.status === 'ambiguous' || result.status === 'incomplete' ? 'warning' : 'default'} label={result.status === 'unconfigured' && result.scheduleSettings?.mealPending ? 'Revisar comida individual' : dailyStatusLabels[result.status]} />
+                {result.mealDetection === 'automatic' && <Typography variant="caption" color="text.secondary">Comida automática</Typography>}</Stack></TableCell>
               <TableCell>{result.incidents.length ? <Chip size="small" color="warning" label={result.incidents.length} /> : '0'}</TableCell>
               <TableCell>{result.counters.arrival} / {result.counters.meal}</TableCell><TableCell>{result.deductionDays ? `${result.deductionDays} día(s)` : '—'}</TableCell>
               <TableCell><Button size="small" onClick={() => setDetail(day)}>Ver</Button></TableCell>

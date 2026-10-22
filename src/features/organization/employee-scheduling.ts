@@ -8,7 +8,9 @@ export interface EmployeeScheduleInput {
   effectiveFrom: string
   workHours: WorkHours | null
   meal: MealSettings | null
+  mealMode?: 'inherit' | 'automatic' | 'individual'
   recognitionMarginMinutes: number
+  recognitionMarginInherited?: boolean
   expectedVersionId?: string | null
 }
 export interface EmployeeScheduleVersion extends EmployeeScheduleInput {
@@ -27,11 +29,10 @@ export function useEmployeeScheduling(employeeId?: string) {
 }
 
 export function getInitialEmployeeScheduling(view: EmployeeSchedulingView | undefined, today: string): EmployeeScheduleInput {
-  const legacy = view?.resolved?.settings
-  const meal = view?.version ? view.version.meal : legacy && !legacy.mealPending ? {
-    enabled: legacy.mealEnabled, startTime: legacy.mealStart, endTime: legacy.mealEnd, durationMinutes: legacy.mealDurationMinutes,
-  } : null
   return { effectiveFrom: view?.version?.effectiveFrom ?? view?.firstAttendanceDate ?? today,
-    workHours: view?.version?.workHours ?? null, meal,
-    recognitionMarginMinutes: view?.version?.recognitionMarginMinutes ?? 30, expectedVersionId: view?.latestVersionId ?? null }
+    workHours: view?.version?.workHours ?? null, meal: view?.version?.meal ?? null,
+    mealMode: view?.version?.mealMode ?? (view?.version ? view.version.meal ? 'individual' : 'automatic' : 'inherit'),
+    recognitionMarginMinutes: view?.version?.recognitionMarginMinutes ?? view?.baseSchedule?.settings.recognitionMarginMinutes ?? 30,
+    recognitionMarginInherited: view?.version ? view.version.recognitionMarginInherited ?? false : true,
+    expectedVersionId: view?.latestVersionId ?? null }
 }

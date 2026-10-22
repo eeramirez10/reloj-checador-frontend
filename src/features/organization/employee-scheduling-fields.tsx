@@ -11,6 +11,7 @@ import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
 import type { EmployeeScheduleInput, MealSettings } from './employee-scheduling'
 import type { WorkSchedule } from './types'
+import { branchMealLabel } from './branch-configuration'
 
 const dayLabels = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
 const fieldGrid = { display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }
@@ -19,7 +20,8 @@ export default function EmployeeSchedulingFields({ value, base, firstAttendanceD
   value: EmployeeScheduleInput; base?: WorkSchedule; firstAttendanceDate?: string | null
   onChange: (value: EmployeeScheduleInput) => void
 }) {
-  const mealMode = value.meal ? value.meal.enabled ? 'configured' : 'disabled' : 'pending'
+  const mealMode = value.mealMode === 'inherit' ? 'inherit' : value.mealMode === 'automatic' ? 'automatic'
+    : value.meal ? value.meal.enabled ? 'configured' : 'disabled' : 'automatic'
   const hours = value.workHours ?? base?.settings
   const updateMeal = (changes: Partial<MealSettings>) => {
     if (value.meal) onChange({ ...value, meal: { ...value.meal, ...changes } })
@@ -56,14 +58,15 @@ export default function EmployeeSchedulingFields({ value, base, firstAttendanceD
         }} />} />)}</Stack>
     </>}
     <Divider />
-    <Typography variant="h3" component="h3">Comida individual</Typography>
+    <Typography variant="h3" component="h3">Comida</Typography>
     <TextField select label="Configuración de comida" value={mealMode} helperText="La comida es independiente de usar la jornada general o una especial."
-      onChange={(event) => onChange({ ...value, meal: event.target.value === 'pending' ? null : {
+      onChange={(event) => onChange({ ...value, mealMode: event.target.value === 'inherit' ? 'inherit' : event.target.value === 'automatic' ? 'automatic' : 'individual',
+        meal: event.target.value === 'automatic' || event.target.value === 'inherit' ? null : {
         enabled: event.target.value === 'configured', startTime: value.meal?.startTime || (event.target.value === 'disabled' ? '14:00' : ''),
         endTime: value.meal?.endTime || (event.target.value === 'disabled' ? '14:00' : ''),
         durationMinutes: value.meal?.durationMinutes ?? 60,
       } })}>
-      <MenuItem value="pending">Pendiente de configurar</MenuItem><MenuItem value="configured">Configurar salida y regreso de comida</MenuItem><MenuItem value="disabled">Sin movimientos de comida</MenuItem>
+      <MenuItem value="inherit">Usar comida de la sucursal</MenuItem><MenuItem value="automatic">Detección automática (sin horario fijo)</MenuItem><MenuItem value="configured">Configurar salida y regreso de comida</MenuItem><MenuItem value="disabled">Sin movimientos de comida</MenuItem>
     </TextField>
     {value.meal?.enabled && <>
       <Box sx={fieldGrid}>
@@ -77,9 +80,13 @@ export default function EmployeeSchedulingFields({ value, base, firstAttendanceD
       </Box>
       <Typography variant="body2" color="text.secondary">El regreso esperado se calcula desde la salida real más la duración. Debe permitir volver antes de las {hours?.exitTime ?? 'horas de salida configuradas'}.</Typography>
     </>}
-    {mealMode === 'pending' && <Alert severity="info">La comida seguirá pendiente y no generará retardos de comida hasta que captures su horario.</Alert>}
-    <TextField required type="number" label="Margen para reconocer movimientos (minutos)" value={value.recognitionMarginMinutes}
+    {mealMode === 'inherit' && <Typography variant="body2" color="text.secondary">Comida de sucursal: {branchMealLabel(base?.settings.branchMeal)}. Los cambios futuros de la sucursal se heredarán.</Typography>}
+    {mealMode === 'automatic' && <Alert severity="info">Con cuatro checadas efectivas se identifican entrada, salida a comer, regreso y salida laboral. Se muestra la duración real de comida, sin horario fijo ni retardos de comida.</Alert>}
+    <FormControlLabel label="Usar margen de reconocimiento de la sucursal" control={<Switch checked={value.recognitionMarginInherited ?? false}
+      onChange={(event) => onChange({ ...value, recognitionMarginInherited: event.target.checked })} />} />
+    {value.recognitionMarginInherited ? <Typography variant="body2" color="text.secondary">Margen de sucursal: {base?.settings.recognitionMarginMinutes ?? 30} minutos.</Typography>
+      : <TextField required type="number" label="Margen para reconocer movimientos (minutos)" value={value.recognitionMarginMinutes}
       onChange={(event) => onChange({ ...value, recognitionMarginMinutes: Number(event.target.value) })}
-      slotProps={{ htmlInput: { min: 0, max: 120, step: 1 } }} helperText="Inicialmente 30 minutos para distinguir comida y movimientos intermedios. La entrada y salida reales pueden quedar fuera de la jornada. Las tolerancias de retardo se calculan por separado." />
+      slotProps={{ htmlInput: { min: 0, max: 120, step: 1 } }} helperText="Inicialmente 30 minutos para distinguir comida y movimientos intermedios. La entrada y salida reales pueden quedar fuera de la jornada. Las tolerancias de retardo se calculan por separado." />}
   </>
 }

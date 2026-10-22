@@ -55,6 +55,13 @@ export const router = createBrowserRouter([
         },
       },
       {
+        path: 'employees/:id/attendance',
+        lazy: async () => {
+          const { default: Component } = await import('../pages/employee-attendance.page')
+          return { Component }
+        },
+      },
+      {
         path: 'synchronization',
         lazy: async () => {
           const { default: Component } = await import('../pages/synchronization.page')

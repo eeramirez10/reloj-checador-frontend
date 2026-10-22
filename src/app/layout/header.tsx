@@ -9,7 +9,7 @@ import Toolbar from '@mui/material/Toolbar'
 import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
 import AppBar from '@mui/material/AppBar'
-import { useLocation } from 'react-router-dom'
+import { matchPath, useLocation } from 'react-router-dom'
 import { useServiceHealth } from '../../features/system/hooks/use-service-health'
 import { navigationSections } from './navigation'
 
@@ -24,6 +24,7 @@ function Header({ collapsed, sidebarWidth, onToggleSidebar, onOpenMobileMenu }: 
   const location = useLocation()
   const serviceHealth = useServiceHealth()
   const page = navigationSections.flatMap((section) => section.items).find((item) => item.path === location.pathname)
+  const pageTitle = matchPath('/employees/:id/attendance', location.pathname) ? 'Tarjeta de asistencia' : page?.label ?? 'Página no encontrada'
   const serviceStatus = serviceHealth.isPending
     ? 'Conectando con el servicio'
     : serviceHealth.isError
@@ -62,7 +63,7 @@ function Header({ collapsed, sidebarWidth, onToggleSidebar, onOpenMobileMenu }: 
           {collapsed ? <MenuRoundedIcon /> : <MenuOpenRoundedIcon />}
         </IconButton>
         <Typography color="text.primary" noWrap sx={{ fontSize: 14, fontWeight: 500 }}>
-          {page?.label ?? 'Página no encontrada'}
+          {pageTitle}
         </Typography>
 
         <Box sx={{ flexGrow: 1 }} />

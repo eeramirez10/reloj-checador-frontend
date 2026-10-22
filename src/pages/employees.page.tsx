@@ -25,6 +25,7 @@ import Typography from '@mui/material/Typography'
 import { useRef, useState } from 'react'
 import { useDevices } from '../features/devices/hooks/use-devices'
 import EmployeeClockDialog from '../features/employees/employee-clock-dialog'
+import EmployeeActionsMenu, { type EmployeeActions } from '../features/employees/employee-actions-menu'
 import EmployeeHistoryDialog from '../features/employees/employee-history-dialog'
 import EmployeeIdentificationDialog from '../features/employees/employee-identification-dialog'
 import { useEmployees } from '../features/employees/hooks/use-employees'
@@ -47,18 +48,6 @@ function EmployeeStatus({ employee }: { employee: Employee }) {
   return <Stack spacing={0.5} sx={{ alignItems: 'flex-start' }}>
     {employee.identificationStatus === 'pending' && <Chip size="small" variant="outlined" color="warning" label="Pendiente de identificar" />}
     <Chip size="small" variant="outlined" color={employee.isActive ? 'success' : 'default'} label={employee.isActive ? 'Activo' : 'Dado de baja'} />
-  </Stack>
-}
-
-type EmployeeActions = Record<'edit' | 'identify' | 'clock' | 'assign' | 'history', (employee: Employee) => void>
-
-function EmployeeActionButtons({ employee, actions }: { employee: Employee; actions: EmployeeActions }) {
-  return <Stack direction="row" sx={{ flexWrap: 'wrap', maxWidth: 280 }}>
-    <Button size="small" onClick={() => actions.edit(employee)}>Editar</Button>
-    {employee.identificationStatus === 'pending' && <Button size="small" color="warning" onClick={() => actions.identify(employee)}>Identificar</Button>}
-    {employee.identificationStatus === 'confirmed' && <Button size="small" onClick={() => actions.clock(employee)}>Reloj</Button>}
-    <Button size="small" onClick={() => actions.assign(employee)}>Asignar</Button>
-    <Button size="small" onClick={() => actions.history(employee)}>Historial</Button>
   </Stack>
 }
 
@@ -197,7 +186,7 @@ export default function EmployeesPage() {
               <TableCell>{clock ? <Stack><Typography variant="body2">{clock.deviceName}</Typography><Typography variant="caption" color="text.secondary">ID {clock.userId}</Typography></Stack> : 'Sin reloj asignado'}</TableCell>
               <TableCell>{scheduleLabel}</TableCell>
               <TableCell><EmployeeStatus employee={employee} /></TableCell>
-              <TableCell><EmployeeActionButtons employee={employee} actions={actions} /></TableCell>
+              <TableCell><EmployeeActionsMenu employee={employee} actions={actions} /></TableCell>
             </TableRow>
           })}{!visible.length && <TableRow><TableCell colSpan={8}>No hay empleados con estos filtros. Agrega una ficha o sincroniza los registros de un reloj.</TableCell></TableRow>}</TableBody>
         </Table></TableContainer>
@@ -213,7 +202,7 @@ export default function EmployeesPage() {
               <Typography variant="body2">Reloj: {clock ? `${clock.deviceName}, ID ${clock.userId}` : 'Sin reloj asignado'}</Typography>
               <Typography variant="caption" color="text.secondary">Horario: {scheduleLabel}</Typography>
               <Typography variant="caption" color="text.secondary">RFC: {employee.rfc || '—'}. NSS: {employee.imss || '—'}.</Typography>
-              <EmployeeActionButtons employee={employee} actions={actions} />
+              <EmployeeActionsMenu employee={employee} actions={actions} />
             </Stack>
           </Paper>)}
           {!visibleRows.length && <Paper variant="outlined" sx={{ p: 3 }}>No hay empleados con estos filtros.</Paper>}

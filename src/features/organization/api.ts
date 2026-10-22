@@ -17,7 +17,7 @@ export function useDeductions(filters: ReportFilters) { return useQuery({ queryK
 export function useOrganizationMutation<T>(mutationFn: (input: T) => Promise<unknown>) {
   const client = useQueryClient()
   return useMutation({ mutationFn, onSuccess: async () => {
-    await Promise.all(['branches', 'branch-policies', 'work-schedules', 'schedule-assignments', 'employee-scheduling', 'employees', 'employee-history', 'device-users', 'devices', 'attendance', 'daily-attendance', 'deductions']
+    await Promise.all(['branches', 'branch-configurations', 'branch-configuration', 'branch-policies', 'work-schedules', 'schedule-assignments', 'employee-scheduling', 'employees', 'employee-history', 'device-users', 'devices', 'attendance', 'daily-attendance', 'deductions']
       .map((key) => client.invalidateQueries({ queryKey: [key] })))
   } })
 }
@@ -27,7 +27,7 @@ export async function saveBranch(input: { id?: string; values: Omit<Branch, 'id'
 export async function savePolicy(input: Omit<BranchPolicy, 'id'>) {
   return httpClient.post(`/branches/${input.branchId}/policies`, { effectiveFrom: input.effectiveFrom, settings: input.settings })
 }
-export async function saveSchedule(input: Omit<WorkSchedule, 'id'>) { return httpClient.post('/work-schedules', input) }
+export async function saveSchedule(input: Omit<WorkSchedule, 'id' | 'settings'> & { settings: Pick<WorkSchedule['settings'], 'workDays' | 'entryTime' | 'exitTime'> }) { return httpClient.post('/work-schedules', input) }
 export async function saveAssignments(input: AssignmentTargets & { branchId?: string; scheduleId?: string | null; effectiveFrom: string }) {
   return httpClient.post('/organization/assignments', input, { timeout: 120_000 })
 }

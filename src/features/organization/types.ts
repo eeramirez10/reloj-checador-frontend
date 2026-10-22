@@ -19,6 +19,7 @@ export interface Branch {
   notes: string
 }
 export interface PolicySettings {
+  entryRepeatWindowMinutes?: number
   entryToleranceMinutes: number
   mealToleranceMinutes: number
   entryAllowedTardies: number
@@ -31,6 +32,16 @@ export interface BranchPolicy {
   branchId: string
   effectiveFrom: string
   settings: PolicySettings
+  createdAt?: string
+  configurationId?: string | null
+  supersededFrom?: string | null
+  deletedAt?: string | null
+}
+export interface BranchMealSettings {
+  mode: 'automatic' | 'configured' | 'disabled'
+  startTime: string
+  endTime: string
+  durationMinutes: number
 }
 export interface ScheduleSettings {
   workDays: number[]
@@ -43,6 +54,9 @@ export interface ScheduleSettings {
   mealMode?: 'schedule' | 'individual'
   mealPending?: boolean
   recognitionMarginMinutes?: number
+  mealDetection?: 'automatic' | 'configured' | 'disabled' | 'invalid'
+  branchMeal?: BranchMealSettings
+  mealSource?: 'branch' | 'individual' | 'automatic'
 }
 export interface WorkSchedule {
   id: string
@@ -52,6 +66,9 @@ export interface WorkSchedule {
   isDefault: boolean
   settings: ScheduleSettings
   supersededFrom?: string | null
+  createdAt?: string
+  configurationId?: string | null
+  deletedAt?: string | null
 }
 export interface AssignmentTargets {
   employeeIds?: string[]
@@ -97,6 +114,7 @@ export interface DailyAttendance {
     policy?: PolicySettings
     missingMovements?: Array<'entry' | 'meal_departure' | 'meal_return' | 'exit'>
     mealConfigured?: boolean
+    mealDetection?: 'automatic' | 'configured' | 'disabled' | 'invalid'
     policyConfigured?: boolean
     scheduleSource?: 'branch' | 'individual' | 'legacy'
     scheduleSettings?: ScheduleSettings

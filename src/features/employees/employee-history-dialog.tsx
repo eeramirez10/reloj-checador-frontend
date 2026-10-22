@@ -38,8 +38,8 @@ export default function EmployeeHistoryDialog({ employee, onClose }: { employee:
        <Typography variant="h3" component="h3">Cambios de horario y comida</Typography>
        {(history.data.scheduleEvents ?? []).map((event: EmployeeScheduleVersion) => <Typography key={event.id} variant="body2">
          Desde {event.effectiveFrom}: {event.workHours ? `${event.workHours.entryTime}–${event.workHours.exitTime}` : 'Jornada de la sucursal'}.
-         {' '}{event.meal ? event.meal.enabled ? `Comida ${event.meal.startTime}–${event.meal.endTime}, ${event.meal.durationMinutes} minutos.` : 'Sin movimientos de comida.' : 'Comida pendiente de configurar.'}
-         {' '}Margen de reconocimiento: {event.recognitionMarginMinutes} minutos.
+         {' '}{event.mealMode === 'inherit' ? 'Comida de la sucursal.' : event.meal ? event.meal.enabled ? `Comida ${event.meal.startTime}–${event.meal.endTime}, ${event.meal.durationMinutes} minutos.` : 'Sin movimientos de comida.' : 'Comida con detección automática.'}
+         {' '}{event.recognitionMarginInherited ? 'Margen de reconocimiento de la sucursal.' : `Margen de reconocimiento: ${event.recognitionMarginMinutes} minutos.`}
        </Typography>)}
        <details>
         <summary>Respaldo original de la unificación y cambios de identificación</summary>

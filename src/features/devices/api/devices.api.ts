@@ -35,6 +35,6 @@ export async function deleteDevice(deviceId: string): Promise<void> {
 }
 
 export async function testDeviceConnection(deviceId: string): Promise<DeviceInfo> {
-  const response = await httpClient.post<DeviceInfo>(`/devices/${deviceId}/test-connection`)
+  const response = await httpClient.post<DeviceInfo>(`/devices/${deviceId}/test-connection`, {}, { timeout: 150_000 })
   return response.data
 }

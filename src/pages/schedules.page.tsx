@@ -28,9 +28,9 @@ export default function SchedulesPage() {
     <Stack spacing={2}>
       {configurations.isError && <Alert severity="error">{getApiErrorMessage(configurations.error)}</Alert>}
       {configurations.isPending ? <PageLoading /> : <TableContainer component={Paper} variant="outlined">
-        <Table aria-label="Configuración por sucursal" sx={{ minWidth: 1150 }}>
+        <Table aria-label="Configuración por sucursal" sx={{ minWidth: 1300 }}>
           <TableHead><TableRow><TableCell>Sucursal</TableCell><TableCell>Jornada</TableCell><TableCell>Comida</TableCell><TableCell>Entradas repetidas</TableCell>
-            <TableCell>Tolerancias entrada / comida</TableCell><TableCell>Retardos permitidos llegada / comida</TableCell><TableCell>Vigencia</TableCell><TableCell>Acciones</TableCell></TableRow></TableHead>
+             <TableCell>Tolerancias entrada / comida</TableCell><TableCell>Márgenes extras entrada / salida</TableCell><TableCell>Retardos permitidos llegada / comida</TableCell><TableCell>Vigencia</TableCell><TableCell>Acciones</TableCell></TableRow></TableHead>
           <TableBody>{(configurations.data ?? []).map((view) => <TableRow key={view.branch.id}>
             <TableCell sx={{ fontWeight: 600 }}>{view.branch.name}</TableCell>
             <TableCell>{view.schedule ? <Stack><Typography variant="body2" sx={{ whiteSpace: 'nowrap' }}>{view.schedule.settings.entryTime}–{view.schedule.settings.exitTime}</Typography>
@@ -38,13 +38,14 @@ export default function SchedulesPage() {
               : <Typography variant="body2" color="warning.main">Sin jornada</Typography>}</TableCell>
             <TableCell>{view.schedule ? branchMealLabel(view.schedule.settings.branchMeal) : 'Pendiente'}</TableCell>
             <TableCell>{view.policy?.settings.entryRepeatWindowMinutes ?? 20} min</TableCell>
-            <TableCell>{view.policy ? `${view.policy.settings.entryToleranceMinutes} / ${view.policy.settings.mealToleranceMinutes} min` : 'Pendientes'}</TableCell>
+             <TableCell>{view.policy ? `${view.policy.settings.entryToleranceMinutes} / ${view.policy.settings.mealToleranceMinutes} min` : 'Pendientes'}</TableCell>
+             <TableCell>{view.policy ? `${view.policy.settings.overtimeEntryMarginMinutes ?? 0} / ${view.policy.settings.overtimeExitMarginMinutes ?? 0} min` : 'Pendientes'}</TableCell>
             <TableCell>{view.policy ? <Stack><Typography variant="body2">{view.policy.settings.entryAllowedTardies} / {view.policy.settings.mealAllowedTardies}</Typography>
               <Typography variant="caption" color="text.secondary">{view.policy.settings.accumulationMode === 'calendar_month' ? 'Mes calendario' : `${view.policy.settings.accumulationDays} días desde el primer retardo`}</Typography></Stack> : 'Pendientes'}</TableCell>
             <TableCell sx={{ whiteSpace: 'nowrap' }}>{view.schedule?.effectiveFrom && view.schedule.effectiveFrom === view.policy?.effectiveFrom ? view.schedule.effectiveFrom : <Stack>
               <Typography variant="caption">Jornada: {view.schedule?.effectiveFrom ?? '—'}</Typography><Typography variant="caption">Reglas: {view.policy?.effectiveFrom ?? '—'}</Typography></Stack>}</TableCell>
             <TableCell><Stack direction="row" spacing={0.5}><Button size="small" onClick={() => setEditing(view)}>Configurar</Button><Button size="small" onClick={() => setHistory(view)}>Historial</Button></Stack></TableCell>
-          </TableRow>)}{!configurations.data?.length && <TableRow><TableCell colSpan={8}>Agrega una sucursal para configurar su jornada y reglas.</TableCell></TableRow>}</TableBody>
+           </TableRow>)}{!configurations.data?.length && <TableRow><TableCell colSpan={9}>Agrega una sucursal para configurar su jornada y reglas.</TableCell></TableRow>}</TableBody>
         </Table>
       </TableContainer>}
       <Typography variant="body2" color="text.secondary">Los empleados heredan la configuración de su sucursal. Sus horarios y comidas individuales tienen prioridad. Las versiones y su eliminación se administran desde Historial.</Typography>

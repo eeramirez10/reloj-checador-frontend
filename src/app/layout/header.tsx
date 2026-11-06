@@ -1,7 +1,6 @@
 import HelpOutlineRoundedIcon from '@mui/icons-material/HelpOutlineRounded'
 import MenuOpenRoundedIcon from '@mui/icons-material/MenuOpenRounded'
 import MenuRoundedIcon from '@mui/icons-material/MenuRounded'
-import Avatar from '@mui/material/Avatar'
 import Box from '@mui/material/Box'
 import IconButton from '@mui/material/IconButton'
 import Stack from '@mui/material/Stack'
@@ -12,6 +11,8 @@ import AppBar from '@mui/material/AppBar'
 import { matchPath, useLocation } from 'react-router-dom'
 import { useServiceHealth } from '../../features/system/hooks/use-service-health'
 import { navigationSections } from './navigation'
+import AccountMenu from '../../features/auth/account-menu'
+import { usePermissions } from '../../features/auth/auth-context'
 
 type HeaderProps = {
   collapsed: boolean
@@ -22,6 +23,7 @@ type HeaderProps = {
 
 function Header({ collapsed, sidebarWidth, onToggleSidebar, onOpenMobileMenu }: HeaderProps) {
   const location = useLocation()
+  const { isAdmin } = usePermissions()
   const serviceHealth = useServiceHealth()
   const page = navigationSections.flatMap((section) => section.items).find((item) => item.path === location.pathname)
   const pageTitle = matchPath('/employees/:id/attendance', location.pathname) ? 'Tarjeta de asistencia' : page?.label ?? 'Página no encontrada'
@@ -82,7 +84,7 @@ function Header({ collapsed, sidebarWidth, onToggleSidebar, onOpenMobileMenu }: 
               {serviceStatus}
             </Typography>
           </Stack>
-          <Tooltip title="Documentación de la API">
+          {isAdmin && <Tooltip title="Documentación de la API">
             <IconButton
               aria-label="Abrir documentación de la API"
               component="a"
@@ -93,13 +95,8 @@ function Header({ collapsed, sidebarWidth, onToggleSidebar, onOpenMobileMenu }: 
             >
               <HelpOutlineRoundedIcon fontSize="small" />
             </IconButton>
-          </Tooltip>
-          <Avatar
-            aria-label="Reloj Checador"
-            sx={{ bgcolor: 'primary.light', color: 'primary.dark', fontSize: 12, fontWeight: 600, width: 32, height: 32 }}
-          >
-            RC
-          </Avatar>
+          </Tooltip>}
+          <AccountMenu />
         </Stack>
       </Toolbar>
     </AppBar>

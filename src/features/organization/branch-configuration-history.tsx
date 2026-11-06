@@ -48,7 +48,8 @@ export default function BranchConfigurationHistory({ branchId, name, onClose }: 
               <TableCell>{version.schedule ? <Stack><Typography variant="body2">{version.schedule.settings.entryTime}–{version.schedule.settings.exitTime}</Typography>
                 <Typography variant="caption">Comida: {meal}</Typography></Stack> : '—'}</TableCell>
               <TableCell>{version.policy ? <Stack><Typography variant="caption">Tolerancia entrada / comida: {version.policy.settings.entryToleranceMinutes} / {version.policy.settings.mealToleranceMinutes} min</Typography>
-                <Typography variant="caption">Entradas repetidas: {version.policy.settings.entryRepeatWindowMinutes ?? 20} min</Typography></Stack> : '—'}</TableCell>
+                 <Typography variant="caption">Entradas repetidas: {version.policy.settings.entryRepeatWindowMinutes ?? 20} min</Typography>
+                 <Typography variant="caption">Márgenes extras entrada / salida: {version.policy.settings.overtimeEntryMarginMinutes ?? 0} / {version.policy.settings.overtimeExitMarginMinutes ?? 0} min</Typography></Stack> : '—'}</TableCell>
               <TableCell><Chip size="small" variant="outlined" color={state === 'Vigente' ? 'success' : 'default'} label={state} /></TableCell>
               <TableCell>{!version.deletedAt && <Button size="small" color="error" onClick={() => { mutation.reset(); setDeleting(version) }}>Eliminar</Button>}</TableCell>
             </TableRow>

@@ -1,12 +1,13 @@
 import AddRoundedIcon from '@mui/icons-material/AddRounded'
 import DevicesOtherOutlinedIcon from '@mui/icons-material/DevicesOtherOutlined'
 import Alert from '@mui/material/Alert'
+import AlertTitle from '@mui/material/AlertTitle'
 import Button from '@mui/material/Button'
 import Paper from '@mui/material/Paper'
 import Snackbar from '@mui/material/Snackbar'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { CreateDeviceDialog } from '../features/devices/create-device-dialog'
 import DeviceList from '../features/devices/device-list/device-list'
 import { useCreateDevice, useTestDeviceConnection } from '../features/devices/hooks/use-device-mutations'
@@ -18,6 +19,7 @@ import PageLoading from '../shared/ui/page-loading'
 import { useBranches } from '../features/organization/api'
 import AssignmentDialog from '../features/organization/assignment-dialog'
 import EditDeviceDialog from '../features/devices/edit-device-dialog'
+import DeviceClockDialog from '../features/devices/device-clock-dialog'
 
 type Notice = {
   severity: 'success' | 'error'
@@ -28,12 +30,15 @@ function DevicesPage() {
   const branches = useBranches()
   const [assigning, setAssigning] = useState<Device | null>(null)
   const [editing, setEditing] = useState<Device | null>(null)
+  const [managingClock, setManagingClock] = useState<Device | null>(null)
   const devicesQuery = useDevices()
   const createDevice = useCreateDevice()
   const testConnection = useTestDeviceConnection()
   const [dialogOpen, setDialogOpen] = useState(false)
   const [submissionError, setSubmissionError] = useState<string>()
   const [notice, setNotice] = useState<Notice | null>(null)
+  const [connectionError, setConnectionError] = useState<{ device: Device; message: string } | null>(null)
+  const connectionErrorRef = useRef<HTMLDivElement>(null)
   const devices = devicesQuery.data ?? []
 
   function openCreateDialog() {
@@ -59,11 +64,14 @@ function DevicesPage() {
   }
 
   async function handleTestConnection(device: Device) {
+    setConnectionError(null)
+    setNotice(null)
     try {
       await testConnection.mutateAsync(device.id)
       setNotice({ severity: 'success', message: `Conexión establecida con ${device.name}.` })
     } catch (error) {
-      setNotice({ severity: 'error', message: getApiErrorMessage(error) })
+      setConnectionError({ device, message: getApiErrorMessage(error) })
+      requestAnimationFrame(() => connectionErrorRef.current?.scrollIntoView({ block: 'nearest' }))
     }
   }
 
@@ -80,6 +88,11 @@ function DevicesPage() {
       />
 
       <Stack spacing={2}>
+        {connectionError && <Alert ref={connectionErrorRef} severity="error" onClose={() => setConnectionError(null)} sx={{ overflowWrap: 'anywhere', scrollMarginTop: 88 }}>
+          <AlertTitle>No se pudo conectar con {connectionError.device.name}</AlertTitle>
+          <Typography variant="body2">{connectionError.device.ipAddress}:{connectionError.device.tcpPort} · {connectionError.device.driver === 'node' ? 'TCP/IP directo' : 'Puente SDK'}</Typography>
+          <Typography variant="body2">{connectionError.message}</Typography>
+        </Alert>}
         {devicesQuery.isError && devicesQuery.data && (
           <Alert
             action={<Button color="inherit" onClick={() => void devicesQuery.refetch()} size="small">Reintentar</Button>}
@@ -123,6 +136,7 @@ function DevicesPage() {
             branchNames={new Map((branches.data ?? []).map((branch) => [branch.id, branch.name]))}
             onAssign={setAssigning}
             onEdit={setEditing}
+            onManageClock={setManagingClock}
             onTestConnection={(device) => void handleTestConnection(device)}
             testingDeviceId={testConnection.isPending ? testConnection.variables : undefined}
           />
@@ -136,7 +150,11 @@ function DevicesPage() {
         submissionError={submissionError}
         submitting={createDevice.isPending}
       />}
-      {editing && <EditDeviceDialog key={editing.id} device={editing} onClose={() => setEditing(null)} onSaved={() => setNotice({ severity: 'success', message: 'Se actualizó la configuración del reloj.' })} />}
+      {editing && <EditDeviceDialog key={editing.id} device={editing} onClose={() => setEditing(null)} onSaved={() => {
+        if (connectionError?.device.id === editing.id) setConnectionError(null)
+        setNotice({ severity: 'success', message: 'Se actualizó la configuración del reloj.' })
+      }} />}
+      {managingClock && <DeviceClockDialog key={managingClock.id} device={managingClock} branchName={(branches.data ?? []).find((branch) => branch.id === managingClock.branchId)?.name ?? 'Sin sucursal'} onClose={() => setManagingClock(null)} />}
       {assigning && <AssignmentDialog title={`Sucursal de ${assigning.name}`} targets={{ deviceIds: [assigning.id] }} onClose={() => setAssigning(null)} />}
 
       <Snackbar

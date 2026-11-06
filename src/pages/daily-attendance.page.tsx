@@ -30,6 +30,10 @@ import UserPhotoDialog, { UserPhotoAvatar } from '../features/users/user-photo-d
 import { getApiErrorMessage } from '../shared/api/api-error'
 import PageHeader from '../shared/ui/page-header'
 import PageLoading from '../shared/ui/page-loading'
+import RouteDetails from '../features/attendance/route-details'
+import { formatOvertime } from '../features/attendance/overtime-format'
+import { leaveAuthorizationText } from '../features/leave/leave-format'
+import { usePermissions } from '../features/auth/auth-context'
 
 function DayDetails({ day, onClose }: { day: DailyAttendance; onClose: () => void }) {
   return <Dialog open fullWidth maxWidth="md" onClose={onClose}>
@@ -37,11 +41,14 @@ function DayDetails({ day, onClose }: { day: DailyAttendance; onClose: () => voi
     <DialogContent dividers>
       <Stack spacing={2}>
         <Typography variant="body2">{day.result.branchName || 'Sin sucursal'} · {day.result.scheduleName || 'Sin horario'} · {day.result.timeZone}</Typography>
+        <RouteDetails routes={day.result.routes} />
+        {day.result.overtime && <Typography variant="body2">Horas extras netas: {day.result.overtime.status === 'calculated' ? formatOvertime(day.result.overtime.netSeconds) : day.result.overtime.issue ?? 'Pendientes'}.</Typography>}
         {day.result.scheduleSettings && <Typography variant="body2">Jornada {day.result.scheduleSettings.entryTime}–{day.result.scheduleSettings.exitTime} ({day.result.scheduleSource === 'branch' ? 'sucursal' : 'individual'}). Margen de reconocimiento: {day.result.scheduleSettings.recognitionMarginMinutes ?? 30} minutos.</Typography>}
         {day.result.policyConfigured === false && <Alert severity="info">La jornada se identifica por horarios. No hay reglas de retardos vigentes para esta fecha; no se generan sanciones de esa política.</Alert>}
         {day.result.mealDetection === 'automatic' && <Alert severity="info">Comida detectada automáticamente por las checadas, sin horario fijo ni retardos de comida.</Alert>}
         {day.result.mealDetection === 'configured' && day.result.scheduleSettings && <Typography variant="body2">Comida {day.result.scheduleSettings.mealSource === 'branch' ? 'de sucursal' : 'individual'}: {day.result.scheduleSettings.mealStart}–{day.result.scheduleSettings.mealEnd}, {day.result.scheduleSettings.mealDurationMinutes} minutos.</Typography>}
         {day.result.issues.map((issue) => <Alert key={issue} severity="warning">{issue}</Alert>)}
+        {day.result.leaveAuthorizations?.map((leave) => <Alert key={leave.requestId} severity="info">{leaveAuthorizationText(leave)}</Alert>)}
         {day.result.incidents.map((incident) => <Alert key={incident.kind} severity="warning">{incident.kind === 'arrival' ? 'Llegada tarde' : incident.kind === 'meal_departure' ? 'Salida a comer fuera de rango' : 'Regreso de comida tarde'}: {incident.minutes} minutos respecto a la hora prevista.</Alert>)}
         <Table size="small" aria-label="Detalle de movimientos"><TableHead><TableRow><TableCell>Fecha y hora local</TableCell><TableCell>Movimiento identificado</TableCell></TableRow></TableHead>
           <TableBody>{day.result.punches.map((punch) => <TableRow key={punch.id}><TableCell>{punch.localTime}</TableCell><TableCell>{movementLabels[punch.movement]}</TableCell></TableRow>)}</TableBody></Table>
@@ -54,6 +61,7 @@ function DayDetails({ day, onClose }: { day: DailyAttendance; onClose: () => voi
 }
 
 export default function DailyAttendancePage() {
+  const { isAdmin } = usePermissions()
   const [from, setFrom] = useState(getToday)
   const [to, setTo] = useState(getToday)
   const [branchId, setBranchId] = useState('')
@@ -72,7 +80,7 @@ export default function DailyAttendancePage() {
   const visibleDeductions = (deductions.data ?? []).filter((deduction) => !normalized || deduction.name.toLocaleLowerCase('es-MX').includes(normalized))
   return <>
     <PageHeader title="Asistencia diaria" description="Consulta la jornada identificada automáticamente, los retardos acumulados y los días de descuento registrados."
-      action={<Button disabled={refresh.isPending} variant="outlined" startIcon={<RefreshRoundedIcon />} onClick={() => refresh.mutate(undefined)}>{refresh.isPending ? 'Calculando…' : 'Actualizar cálculo'}</Button>} />
+      action={isAdmin ? <Button disabled={refresh.isPending} variant="outlined" startIcon={<RefreshRoundedIcon />} onClick={() => refresh.mutate(undefined)}>{refresh.isPending ? 'Calculando…' : 'Actualizar cálculo'}</Button> : undefined} />
     <Stack spacing={2}>
       {[days, deductions, refresh].filter((query) => query.isError).map((query, index) => <Alert key={index} severity="error">{getApiErrorMessage(query.error)}</Alert>)}
       <Paper variant="outlined" sx={{ p: 2 }}><Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
@@ -110,7 +118,8 @@ export default function DailyAttendancePage() {
               <TableCell><Stack><Typography variant="body2">{time(result.mealReturn)}</Typography>{result.expectedMealReturn && <Typography variant="caption" color="text.secondary">Previsto {time(result.expectedMealReturn)}</Typography>}{result.mealMinutes !== undefined && <Typography variant="caption" color="text.secondary">{result.mealMinutes} min</Typography>}</Stack></TableCell>
               <TableCell>{time(result.exit)}</TableCell>
               <TableCell><Stack spacing={0.5} sx={{ alignItems: 'flex-start' }}><Chip size="small" variant="outlined" color={result.status === 'complete' ? 'success' : result.status === 'ambiguous' || result.status === 'incomplete' ? 'warning' : 'default'} label={result.status === 'unconfigured' && result.scheduleSettings?.mealPending ? 'Revisar comida individual' : dailyStatusLabels[result.status]} />
-                {result.mealDetection === 'automatic' && <Typography variant="caption" color="text.secondary">Comida automática</Typography>}</Stack></TableCell>
+                {result.leaveAuthorizations?.length && result.status !== 'authorized_absence' ? <Chip size="small" color="info" variant="outlined" label="Con permiso" /> : null}
+                {result.routes?.length ? <Typography variant="caption" color="text.secondary">En ruta</Typography> : result.mealDetection === 'automatic' && <Typography variant="caption" color="text.secondary">Comida automática</Typography>}</Stack></TableCell>
               <TableCell>{result.incidents.length ? <Chip size="small" color="warning" label={result.incidents.length} /> : '0'}</TableCell>
               <TableCell>{result.counters.arrival} / {result.counters.meal}</TableCell><TableCell>{result.deductionDays ? `${result.deductionDays} día(s)` : '—'}</TableCell>
               <TableCell><Button size="small" onClick={() => setDetail(day)}>Ver</Button></TableCell>

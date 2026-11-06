@@ -13,10 +13,12 @@ import MenuItem from '@mui/material/MenuItem'
 import { useId, useState } from 'react'
 import { Link as RouterLink } from 'react-router-dom'
 import type { Employee } from './types/employee'
+import { usePermissions } from '../auth/auth-context'
 
 export type EmployeeActions = Record<'edit' | 'identify' | 'clock' | 'assign' | 'history', (employee: Employee) => void>
 
 export default function EmployeeActionsMenu({ employee, actions }: { employee: Employee; actions: EmployeeActions }) {
+  const { canManagePersonnel } = usePermissions()
   const id = useId()
   const [anchor, setAnchor] = useState<HTMLElement | null>(null)
   const open = Boolean(anchor)
@@ -30,12 +32,14 @@ export default function EmployeeActionsMenu({ employee, actions }: { employee: E
       <MenuItem component={RouterLink} to={`/employees/${employee.id}/attendance`} onClick={() => setAnchor(null)}>
         <ListItemIcon><CalendarMonthRoundedIcon fontSize="small" /></ListItemIcon>Asistencia
       </MenuItem>
+      {canManagePersonnel && <>
       <Divider />
       <MenuItem onClick={() => select('edit')}><ListItemIcon><EditOutlinedIcon fontSize="small" /></ListItemIcon>Editar</MenuItem>
       {employee.identificationStatus === 'pending' && <MenuItem onClick={() => select('identify')}><ListItemIcon><PersonSearchOutlinedIcon fontSize="small" /></ListItemIcon>Identificar</MenuItem>}
       {employee.identificationStatus === 'confirmed' && <MenuItem onClick={() => select('clock')}><ListItemIcon><ScheduleRoundedIcon fontSize="small" /></ListItemIcon>Reloj</MenuItem>}
       <MenuItem onClick={() => select('assign')}><ListItemIcon><SwapHorizRoundedIcon fontSize="small" /></ListItemIcon>Asignar</MenuItem>
       <MenuItem onClick={() => select('history')}><ListItemIcon><HistoryRoundedIcon fontSize="small" /></ListItemIcon>Historial</MenuItem>
+      </>}
     </Menu>
   </>
 }

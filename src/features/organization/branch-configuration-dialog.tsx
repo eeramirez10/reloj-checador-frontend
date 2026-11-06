@@ -15,6 +15,7 @@ import { initialBranchConfiguration, saveBranchConfiguration, type BranchConfigu
 import EditorDialog from './editor-dialog'
 import ToleranceField from './tolerance-field'
 import type { PolicySettings } from './types'
+import OvertimeMarginFields from './overtime-margin-fields'
 
 const days = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo']
 const fieldGrid = { display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }
@@ -68,6 +69,8 @@ export default function BranchConfigurationDialog({ view, onClose }: { view: Bra
       <ToleranceField label="Tolerancia de entrada" value={value.policy.entryToleranceMinutes} onChange={(next) => policy('entryToleranceMinutes',next)} />
       <ToleranceField label="Tolerancia de comida" value={value.policy.mealToleranceMinutes} onChange={(next) => policy('mealToleranceMinutes',next)} />
     </Box>
+    <Divider />
+    <OvertimeMarginFields value={value.policy} onChange={policy} />
     <Divider />
     <Typography component="h3" variant="h3">Retardos y descuentos</Typography>
     <Box sx={fieldGrid}>

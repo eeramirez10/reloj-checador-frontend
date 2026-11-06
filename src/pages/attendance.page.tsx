@@ -1,4 +1,6 @@
 import AccessTimeRoundedIcon from '@mui/icons-material/AccessTimeRounded'
+import UploadFileOutlinedIcon from '@mui/icons-material/UploadFileOutlined'
+import AttendanceFileDialog from '../features/attendance/attendance-file-dialog'
 import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded'
 import Alert from '@mui/material/Alert'
 import Box from '@mui/material/Box'
@@ -34,6 +36,7 @@ import { getToday, useBranches, useDailyAttendance } from '../features/organizat
 import { movementLabels } from '../features/organization/attendance-labels'
 import type { Movement } from '../features/organization/types'
 import { defaultTimeZone, getTimeZoneLabel } from '../features/organization/time-zones'
+import { usePermissions } from '../features/auth/auth-context'
 
 const localDayFormatter = new Intl.DateTimeFormat('es-MX', {
   timeZone: 'UTC',
@@ -172,6 +175,7 @@ function AttendanceDay({ date, logs, deviceNames, onOpenPhoto, movements, timeZo
 }
 
 function AttendancePage() {
+  const { canManagePersonnel } = usePermissions()
   const branches = useBranches()
   const [branchId, setBranchId] = useState('')
   const [deviceId, setDeviceId] = useState('')
@@ -181,6 +185,7 @@ function AttendancePage() {
   const daily = useDailyAttendance({ from: selectedDate, to: selectedDate })
   const movements = new Map((daily.data ?? []).flatMap((day) => day.result.punches.map((punch) => [punch.id, punch.movement] as const)))
   const [photoUser, setPhotoUser] = useState<UserPhotoReference | null>(null)
+  const [importing, setImporting] = useState(false)
   const devices = useDevices()
   const selectedDevice = devices.data?.find((device) => device.id === deviceId)
   const selectedBranch = branches.data?.find((branch) => branch.id === (branchId || selectedDevice?.branchId))
@@ -217,14 +222,14 @@ function AttendancePage() {
     <>
       <PageHeader
         action={
-          <Button
+          <Stack direction="row" spacing={1}>{canManagePersonnel && <Button variant="contained" startIcon={<UploadFileOutlinedIcon />} onClick={() => setImporting(true)}>Importar archivo</Button>}<Button
             disabled={attendance.isFetching}
             onClick={() => { void attendance.refetch(); void daily.refetch() }}
             startIcon={attendance.isFetching ? <CircularProgress color="inherit" size={16} /> : <RefreshRoundedIcon />}
             variant="outlined"
           >
             Actualizar
-          </Button>
+          </Button></Stack>
         }
         description={`Elige un día para ver sus checadas agrupadas. Horas en ${timeZoneLabel}.`}
         title="Checadas"
@@ -343,6 +348,7 @@ function AttendancePage() {
         onClose={() => setPhotoUser(null)}
         user={photoUser}
       />
+      {importing && <AttendanceFileDialog initialBranchId={branchId || selectedDevice?.branchId || ''} initialDeviceId={deviceId} onClose={() => setImporting(false)} />}
     </>
   )
 }

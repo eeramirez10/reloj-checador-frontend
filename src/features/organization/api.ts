@@ -14,10 +14,10 @@ export function useScheduleAssignments() { return useQuery({ queryKey: ['schedul
 export function useDailyAttendance(filters: ReportFilters) { return useQuery({ queryKey: ['daily-attendance', filters], queryFn: ({ signal }) => getList<DailyAttendance>('/attendance/daily', signal, filters), refetchOnMount: 'always', refetchInterval: 60_000 }) }
 export function useDeductions(filters: ReportFilters) { return useQuery({ queryKey: ['deductions', filters], queryFn: ({ signal }) => getList<Deduction>('/attendance/deductions', signal, filters), refetchOnMount: 'always', refetchInterval: 60_000 }) }
 
-export function useOrganizationMutation<T>(mutationFn: (input: T) => Promise<unknown>) {
+export function useOrganizationMutation<T, TResult = unknown>(mutationFn: (input: T) => Promise<TResult>) {
   const client = useQueryClient()
   return useMutation({ mutationFn, onSuccess: async () => {
-    await Promise.all(['branches', 'branch-configurations', 'branch-configuration', 'branch-policies', 'work-schedules', 'schedule-assignments', 'employee-scheduling', 'employees', 'employee-history', 'device-users', 'devices', 'attendance', 'daily-attendance', 'deductions']
+    await Promise.all(['branches', 'branch-configurations', 'branch-configuration', 'branch-policies', 'work-schedules', 'schedule-assignments', 'employee-scheduling', 'employees', 'employee-history', 'device-users', 'devices', 'attendance', 'daily-attendance', 'deductions', 'overtime-report', 'branch-attendance-cards', 'employee-attendance', 'leave-requests', 'leave-request', 'leave-profile']
       .map((key) => client.invalidateQueries({ queryKey: [key] })))
   } })
 }

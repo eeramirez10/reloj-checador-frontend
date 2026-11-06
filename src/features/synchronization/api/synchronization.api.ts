@@ -50,11 +50,11 @@ export async function syncDeviceUsers(deviceId: string): Promise<SyncRun> {
   return response.data
 }
 
-export async function syncDeviceUserPhotos(deviceId: string, userIds: string[]): Promise<UserPhotoSyncResult> {
+export async function syncDeviceUserPhotos(deviceId: string, userIds: string[], signal?: AbortSignal): Promise<UserPhotoSyncResult> {
   const response = await httpClient.post<UserPhotoSyncResult>(
     `/devices/${deviceId}/sync-user-photos`,
     { userIds },
-    { timeout: 135_000 },
+    { timeout: 135_000, signal },
   )
   return response.data
 }

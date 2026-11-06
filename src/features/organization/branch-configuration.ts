@@ -54,6 +54,8 @@ export function initialBranchConfiguration(view: BranchConfigurationView): Branc
     recognitionMarginMinutes: schedule?.recognitionMarginMinutes ?? 30,
     policy: { entryToleranceMinutes: 0, mealToleranceMinutes: 0, entryAllowedTardies: 3, mealAllowedTardies: 3,
       accumulationMode: 'first_lateness', accumulationDays: 30, ...view.policy?.settings,
+      overtimeEntryMarginMinutes: view.policy?.settings.overtimeEntryMarginMinutes ?? 0,
+      overtimeExitMarginMinutes: view.policy?.settings.overtimeExitMarginMinutes ?? 0,
       entryRepeatWindowMinutes: view.policy?.settings.entryRepeatWindowMinutes ?? 20 },
     expectedVersionId: view.latestVersionId,
   }

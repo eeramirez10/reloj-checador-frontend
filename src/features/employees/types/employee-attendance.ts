@@ -1,9 +1,13 @@
 import type { DailyAttendance, ScheduleSettings } from '../../organization/types'
 import type { Employee } from './employee'
+import type { OvertimeDay, RouteDaySegment } from '../../attendance/types/overtime'
+import type { LeaveAuthorization } from '../../leave/types'
 
 export interface AttendancePeriod { from: string; to: string }
 export type EmployeeAttendanceStatus = DailyAttendance['result']['status'] | 'no_records' | 'upcoming'
 export interface EmployeeAttendanceDay {
+  leaveAuthorizations?: LeaveAuthorization[]
+  unauthorizedEarlyExitMinutes?: number | null
   date: string
   status: EmployeeAttendanceStatus
   branchName: string | null
@@ -22,8 +26,11 @@ export interface EmployeeAttendanceDay {
   missingMovements: NonNullable<DailyAttendance['result']['missingMovements']>
   punches: DailyAttendance['result']['punches']
   incidents: DailyAttendance['result']['incidents']
+  overtime?: OvertimeDay
+  routes?: RouteDaySegment[]
 }
 export interface EmployeeAttendanceSummary {
+  authorizedAbsenceDays?: number
   recordedDays: number
   completeDays: number
   incompleteDays: number

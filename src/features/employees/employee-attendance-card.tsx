@@ -19,7 +19,7 @@ import { attendanceObservations, attendanceStatusLabels, formatCardDate, formatC
 import EmployeeAttendanceDayDialog from './employee-attendance-day-dialog'
 
 function DayStatus({ day }: { day: EmployeeAttendanceDay }) {
-  const color = day.status === 'complete' ? 'success' : ['incomplete','ambiguous','unconfigured','no_records'].includes(day.status) ? 'warning' : 'default'
+  const color = day.status === 'complete' ? 'success' : day.status === 'authorized_absence' ? 'info' : ['incomplete','ambiguous','unconfigured','no_records'].includes(day.status) ? 'warning' : 'default'
   return <Chip size="small" variant="outlined" color={color} label={attendanceStatusLabels[day.status]} />
 }
 
@@ -74,7 +74,7 @@ export default function EmployeeAttendanceCard({ card }: { card: AttendanceCard 
               <TableCell sx={{ overflowWrap: 'anywhere' }}><Stack spacing={0.5}>
                 {observations.map((message) => <Typography key={message} variant="caption">{message}</Typography>)}
                 {!observations.length && <Typography variant="caption" color="text.secondary">{day.status === 'no_records' ? 'No hay checadas para este día.' : day.status === 'complete' ? 'Sin observaciones' : '—'}</Typography>}
-                {day.punches.length > 0 && <Button size="small" onClick={() => setDetail(day)} sx={{ alignSelf: 'flex-start', p: 0, minWidth: 0 }}>Ver marcas ({day.punches.length})</Button>}
+                {(day.punches.length > 0 || day.routes?.length) ? <Button size="small" onClick={() => setDetail(day)} sx={{ alignSelf: 'flex-start', p: 0, minWidth: 0 }}>{day.routes?.length ? 'Ver detalle de ruta' : `Ver marcas (${day.punches.length})`}</Button> : null}
               </Stack></TableCell>
             </TableRow>
           })}</TableBody>
@@ -90,7 +90,7 @@ export default function EmployeeAttendanceCard({ card }: { card: AttendanceCard 
         {statistics.map(([label,value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}
       </Box>
       <Typography component="p" variant="caption" color="text.secondary" sx={{ px: { xs: 2, sm: 3 }, mt: 0, mb: 2 }}>
-        {summary.daysOff} días de descanso. Las horas corresponden solo a jornadas con tiempo calculable. Los movimientos y el horario se muestran en la zona local de cada sucursal.
+        {summary.daysOff} días de descanso. {summary.authorizedAbsenceDays ? `${summary.authorizedAbsenceDays} días de ausencia autorizada. ` : ''}Las horas corresponden solo a jornadas con tiempo calculable. Los movimientos y el horario se muestran en la zona local de cada sucursal.
       </Typography>
     </Paper>
     {detail && <EmployeeAttendanceDayDialog day={detail} onClose={() => setDetail(null)} />}

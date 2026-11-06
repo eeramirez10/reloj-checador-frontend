@@ -10,6 +10,8 @@ import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
 import { NavLink, useLocation } from 'react-router-dom'
 import { navigationSections } from './navigation'
+import { useAuth } from '../../features/auth/auth-context'
+import { canOpenPage, roleLabels } from '../../features/auth/types'
 
 type SidebarProps = {
   collapsed: boolean
@@ -25,6 +27,8 @@ type SidebarContentProps = {
 
 function SidebarContent({ collapsed, onNavigate }: SidebarContentProps) {
   const { pathname } = useLocation()
+  const { account } = useAuth()
+  const sections = navigationSections.map(section => ({ ...section, items: section.items.filter(item => account && canOpenPage(account.role, item.path)) })).filter(section => section.items.length)
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -54,7 +58,7 @@ function SidebarContent({ collapsed, onNavigate }: SidebarContentProps) {
       <Divider />
 
       <Box component="nav" aria-label="Navegación principal" sx={{ flex: 1, overflowY: 'auto', py: 1.5 }}>
-        {navigationSections.map((section) => (
+        {sections.map((section) => (
           <Box key={section.label} sx={{ mb: 1.5 }}>
             {!collapsed && (
               <Typography color="text.secondary" sx={{ px: 2.5, py: 1 }} variant="caption">
@@ -119,7 +123,7 @@ function SidebarContent({ collapsed, onNavigate }: SidebarContentProps) {
       {!collapsed && (
         <Box sx={{ borderTop: 1, borderColor: 'divider', px: 2.5, py: 1.75 }}>
           <Typography color="text.secondary" variant="caption">
-            Asistencia local
+            {account ? `${roleLabels[account.role]} · ${account.role === 'admin' ? 'Todas las sucursales' : `${account.branchIds.length} sucursales autorizadas`}` : 'Asistencia local'}
           </Typography>
         </Box>
       )}

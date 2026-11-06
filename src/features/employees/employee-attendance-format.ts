@@ -1,8 +1,11 @@
 import type { AttendancePeriod, EmployeeAttendanceDay, EmployeeAttendanceStatus } from './types/employee-attendance'
+import { formatOvertime, formatOvertimeMargins, formatRouteDate } from '../attendance/overtime-format'
+import { leaveAuthorizationText } from '../leave/leave-format'
 
 export const attendanceStatusLabels: Record<EmployeeAttendanceStatus, string> = {
   complete: 'Completo', incomplete: 'Incompleto', in_progress: 'En curso', ambiguous: 'Por revisar', day_off: 'Descanso',
   unconfigured: 'Revisar horario', no_records: 'Sin registros', upcoming: 'Pendiente',
+  authorized_absence: 'Ausencia autorizada',
 }
 
 const dateFormatter = new Intl.DateTimeFormat('es-MX', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'UTC' })
@@ -26,11 +29,19 @@ export function validateAttendancePeriod({ from, to }: AttendancePeriod): string
 
 export function attendanceObservations(day: EmployeeAttendanceDay): string[] {
   const observations = [...day.issues]
+  observations.push(...(day.leaveAuthorizations ?? []).map(leaveAuthorizationText))
+  for (const route of day.routes ?? []) observations.push(`Ruta: ${formatRouteDate(route.enteredAt, route.timeZone)} a ${formatRouteDate(route.exitedAt, route.timeZone)}. Tramo diario calculado, no es una checada.`)
+  if (day.overtime) observations.push(day.overtime.status === 'calculated' ? `Extras netas: ${formatOvertime(day.overtime.netSeconds)}.` : day.overtime.issue ?? 'Horas extras pendientes.')
+  const margins = day.overtime && formatOvertimeMargins(day.overtime)
+  if (margins) observations.push(margins)
   if (day.arrivalDelayMinutes) {
     const tardy = day.incidents.some((incident) => incident.kind === 'arrival')
     observations.push(`Llegada ${day.arrivalDelayMinutes} min después del horario${tardy ? ' (retardo)' : ''}.`)
+    const arrival = day.incidents.find((incident) => incident.kind === 'arrival')
+    if (arrival && day.leaveAuthorizations?.some((leave) => leave.kind === 'late_arrival')) observations.push(`Exceso sobre la hora autorizada: ${arrival.minutes} min de retardo.`)
   }
   if (day.earlyExitMinutes) observations.push(`Salida ${day.earlyExitMinutes} min antes del horario.`)
+  if (day.unauthorizedEarlyExitMinutes && day.leaveAuthorizations?.some((leave) => leave.kind === 'early_exit')) observations.push(`Salida ${day.unauthorizedEarlyExitMinutes} min antes de lo autorizado.`)
   for (const incident of day.incidents.filter((item) => item.kind !== 'arrival')) {
     observations.push(`${incident.kind === 'meal_departure' ? 'Salida a comer' : 'Regreso de comida'}: retardo de ${incident.minutes} min.`)
   }

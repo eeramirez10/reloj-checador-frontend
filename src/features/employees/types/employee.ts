@@ -1,6 +1,8 @@
 export type EmploymentStatus = 'active' | 'inactive' | 'pending'
 
 export interface EmployeeClockRecord {
+  uid?: number
+  roleObservedAt?: string | null
   id: string
   deviceId: string
   userId: string

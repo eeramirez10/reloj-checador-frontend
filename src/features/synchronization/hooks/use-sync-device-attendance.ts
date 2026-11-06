@@ -14,6 +14,8 @@ export function useSyncDeviceAttendance() {
         queryClient.invalidateQueries({ queryKey: ['daily-attendance'] }),
         queryClient.invalidateQueries({ queryKey: ['employees', 'attendance'] }),
         queryClient.invalidateQueries({ queryKey: ['deductions'] }),
+        queryClient.invalidateQueries({ queryKey: ['overtime-report'] }),
+        queryClient.invalidateQueries({ queryKey: ['branch-attendance-cards'] }),
       ])
     },
   })

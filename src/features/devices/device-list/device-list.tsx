@@ -1,5 +1,6 @@
 import DevicesOtherOutlinedIcon from '@mui/icons-material/DevicesOtherOutlined'
 import LinkRoundedIcon from '@mui/icons-material/LinkRounded'
+import AccessTimeRoundedIcon from '@mui/icons-material/AccessTimeRounded'
 import Button from '@mui/material/Button'
 import Chip from '@mui/material/Chip'
 import CircularProgress from '@mui/material/CircularProgress'
@@ -20,6 +21,7 @@ type DeviceListProps = {
   onTestConnection: (device: Device) => void
   onAssign: (device: Device) => void
   onEdit: (device: Device) => void
+  onManageClock: (device: Device) => void
   branchNames: Map<string, string>
 }
 
@@ -46,7 +48,7 @@ function ConnectionButton({ device, testing, onTestConnection }: {
   )
 }
 
-function DeviceList({ devices, testingDeviceId, onTestConnection, onAssign, onEdit, branchNames }: DeviceListProps) {
+function DeviceList({ devices, testingDeviceId, onTestConnection, onAssign, onEdit, onManageClock, branchNames }: DeviceListProps) {
   return (
     <>
       <TableContainer component={Paper} sx={{ display: { xs: 'none', md: 'block' } }} variant="outlined">
@@ -87,6 +89,7 @@ function DeviceList({ devices, testingDeviceId, onTestConnection, onAssign, onEd
                 <TableCell>{branchNames.get(device.branchId ?? '') || 'Sin asignar'}</TableCell>
                 <TableCell>{device.syncIntervalSeconds} s</TableCell>
                 <TableCell align="right">
+                  <Button size="small" startIcon={<AccessTimeRoundedIcon />} onClick={() => onManageClock(device)}>Fecha y hora</Button>
                   <Button size="small" onClick={() => onEdit(device)}>Editar</Button>
                   <Button size="small" onClick={() => onAssign(device)}>Asignar sucursal</Button>
                   <ConnectionButton
@@ -123,6 +126,7 @@ function DeviceList({ devices, testingDeviceId, onTestConnection, onAssign, onEd
               </Typography>
               <Button size="small" onClick={() => onAssign(device)}>Asignar sucursal</Button>
               <Button size="small" onClick={() => onEdit(device)}>Editar reloj</Button>
+              <Button size="small" startIcon={<AccessTimeRoundedIcon />} onClick={() => onManageClock(device)}>Fecha y hora</Button>
               <ConnectionButton
                 device={device}
                 onTestConnection={() => onTestConnection(device)}

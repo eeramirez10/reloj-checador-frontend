@@ -17,6 +17,7 @@ import { Link as RouterLink } from 'react-router-dom'
 import { useDevices } from '../features/devices/hooks/use-devices'
 import { useSyncRuns } from '../features/synchronization/hooks/use-sync-runs'
 import type { ReactNode } from 'react'
+import { usePermissions } from '../features/auth/auth-context'
 
 const dateFormatter = new Intl.DateTimeFormat('es-MX', {
   dateStyle: 'medium',
@@ -90,6 +91,7 @@ function ShortcutCard({ title, description, to, icon }: ShortcutCardProps) {
 }
 
 function DashboardPage() {
+  const { isAdmin, canManagePersonnel } = usePermissions()
   const devices = useDevices()
   const syncRuns = useSyncRuns()
   const latestSync = syncRuns.data?.[0]
@@ -131,8 +133,8 @@ function DashboardPage() {
           <Typography color="text.secondary" sx={{ maxWidth: 520 }} variant="body2">
             Centraliza los dispositivos ZKTeco, sincroniza sus registros y revisa la actividad de tu equipo.
           </Typography>
-          <Button component={RouterLink} endIcon={<ArrowForwardRoundedIcon />} to="/devices" variant="contained">
-            Ver dispositivos
+          <Button component={RouterLink} endIcon={<ArrowForwardRoundedIcon />} to={isAdmin ? '/devices' : '/employees'} variant="contained">
+            {isAdmin ? 'Ver dispositivos' : 'Ver empleados'}
           </Button>
         </Stack>
 
@@ -177,14 +179,14 @@ function DashboardPage() {
       <Stack spacing={1.5}>
         <Typography component="h2" variant="h3">Accesos directos</Typography>
         <Grid container spacing={2}>
-          <Grid size={{ xs: 12, sm: 6 }}>
+          {isAdmin && <Grid size={{ xs: 12, sm: 6 }}>
             <ShortcutCard
               description="Configura relojes y revisa su conectividad."
               icon={<DevicesOtherOutlinedIcon fontSize="small" />}
               title="Dispositivos"
               to="/devices"
             />
-          </Grid>
+          </Grid>}
           <Grid size={{ xs: 12, sm: 6 }}>
             <ShortcutCard
               description="Administra las fichas, relojes y datos de tu personal."
@@ -201,14 +203,14 @@ function DashboardPage() {
               to="/attendance"
             />
           </Grid>
-          <Grid size={{ xs: 12, sm: 6 }}>
+          {canManagePersonnel && <Grid size={{ xs: 12, sm: 6 }}>
             <ShortcutCard
               description="Consulta resultados y errores de sincronización."
               icon={<SyncAltRoundedIcon fontSize="small" />}
               title="Sincronización"
               to="/synchronization"
             />
-          </Grid>
+          </Grid>}
         </Grid>
       </Stack>
     </Stack>

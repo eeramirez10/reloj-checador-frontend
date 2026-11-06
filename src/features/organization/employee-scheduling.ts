@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { httpClient } from '../../shared/api/http-client'
 import type { WorkSchedule } from './types'
+import { defaultOvertimeSettings, type OvertimeSettings } from '../attendance/types/overtime'
 
 export interface WorkHours { workDays: number[]; entryTime: string; exitTime: string }
 export interface MealSettings { enabled: boolean; startTime: string; endTime: string; durationMinutes: number }
@@ -12,6 +13,7 @@ export interface EmployeeScheduleInput {
   recognitionMarginMinutes: number
   recognitionMarginInherited?: boolean
   expectedVersionId?: string | null
+  overtime?: OvertimeSettings
 }
 export interface EmployeeScheduleVersion extends EmployeeScheduleInput {
   id: string; employeeId: string; createdAt: string; source: string
@@ -34,5 +36,6 @@ export function getInitialEmployeeScheduling(view: EmployeeSchedulingView | unde
     mealMode: view?.version?.mealMode ?? (view?.version ? view.version.meal ? 'individual' : 'automatic' : 'inherit'),
     recognitionMarginMinutes: view?.version?.recognitionMarginMinutes ?? view?.baseSchedule?.settings.recognitionMarginMinutes ?? 30,
     recognitionMarginInherited: view?.version ? view.version.recognitionMarginInherited ?? false : true,
+    overtime: view?.version?.overtime ?? { ...defaultOvertimeSettings },
     expectedVersionId: view?.latestVersionId ?? null }
 }

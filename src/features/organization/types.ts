@@ -1,4 +1,6 @@
 import type { UserPhotoReference } from '../users/types/user-photo-reference'
+import type { OvertimeDay, RouteDaySegment } from '../attendance/types/overtime'
+import type { LeaveAuthorization } from '../leave/types'
 
 export interface Branch {
   id: string
@@ -19,6 +21,8 @@ export interface Branch {
   notes: string
 }
 export interface PolicySettings {
+  overtimeEntryMarginMinutes?: number
+  overtimeExitMarginMinutes?: number
   entryRepeatWindowMinutes?: number
   entryToleranceMinutes: number
   mealToleranceMinutes: number
@@ -98,7 +102,8 @@ export interface DailyAttendance {
     branchName?: string
     scheduleName?: string
     timeZone: string
-    status: 'complete' | 'incomplete' | 'in_progress' | 'ambiguous' | 'day_off' | 'unconfigured'
+    status: 'complete' | 'incomplete' | 'in_progress' | 'ambiguous' | 'day_off' | 'unconfigured' | 'authorized_absence'
+    leaveAuthorizations?: LeaveAuthorization[]
     entry?: string
     mealDeparture?: string
     mealReturn?: string
@@ -118,6 +123,8 @@ export interface DailyAttendance {
     policyConfigured?: boolean
     scheduleSource?: 'branch' | 'individual' | 'legacy'
     scheduleSettings?: ScheduleSettings
+    overtime?: OvertimeDay
+    routes?: RouteDaySegment[]
   }
 }
 export interface Deduction {

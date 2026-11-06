@@ -15,6 +15,7 @@ import Typography from '@mui/material/Typography'
 import { movementLabels } from '../organization/attendance-labels'
 import type { EmployeeAttendanceDay } from './types/employee-attendance'
 import { attendanceObservations, formatCardDate, formatWorkedTime } from './employee-attendance-format'
+import RouteDetails from '../attendance/route-details'
 
 export default function EmployeeAttendanceDayDialog({ day, onClose }: { day: EmployeeAttendanceDay; onClose: () => void }) {
   return <Dialog open fullWidth maxWidth="sm" onClose={onClose}>
@@ -22,10 +23,11 @@ export default function EmployeeAttendanceDayDialog({ day, onClose }: { day: Emp
     <DialogContent dividers>
       <Stack spacing={2}>
         <Typography variant="body2">{day.branchName || 'Sin sucursal'} · {day.timeZone}</Typography>
+        <RouteDetails routes={day.routes} />
         {attendanceObservations(day).map((message) => <Alert key={message} severity="info">{message}</Alert>)}
         <TableContainer><Table size="small" aria-label="Marcas originales del día">
           <TableHead><TableRow><TableCell>Fecha y hora local</TableCell><TableCell>Movimiento</TableCell></TableRow></TableHead>
-          <TableBody>{day.punches.map((punch) => <TableRow key={punch.id}>
+          <TableBody>{!day.punches.length && <TableRow><TableCell colSpan={2}>No hay checadas originales en esta fecha.</TableCell></TableRow>}{day.punches.map((punch) => <TableRow key={punch.id}>
             <TableCell sx={{ whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>{punch.localTime}</TableCell>
             <TableCell>{movementLabels[punch.movement]}</TableCell>
           </TableRow>)}</TableBody>

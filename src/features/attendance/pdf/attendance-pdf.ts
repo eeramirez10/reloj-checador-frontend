@@ -5,6 +5,7 @@ import type { EmployeeAttendanceCard, EmployeeAttendanceDay } from '../../employ
 import { formatAttendanceTime } from '../../organization/attendance-labels'
 import { registerAttendancePdfFonts } from './attendance-pdf-fonts'
 import type { AttendancePdfFile, AttendancePdfSource, PdfExportOptions } from './attendance-pdf-types'
+import { reportPdfFilename } from './pdf-filename'
 
 type PdfDocument = jsPDF & { lastAutoTable?: Table }
 interface PageOwner { card: EmployeeAttendanceCard; headerBottom: number }
@@ -100,6 +101,7 @@ function drawCard(doc: PdfDocument, card: EmployeeAttendanceCard, source: Attend
       ['Días sin registros',summary.daysWithoutRecords,'Días de descanso',summary.daysOff],
       ['Retardos de llegada',summary.arrivalTardies,'Retardos de comida',summary.mealTardies],
       ['Salidas anticipadas',summary.earlyExits,'Días con registros',summary.recordedDays],
+      ...(summary.authorizedAbsenceDays ? [['Ausencias autorizadas',summary.authorizedAbsenceDays,'','']] : []),
     ],
     styles: { font: 'PublicSans', fontSize: 8, cellPadding: 1.4, textColor: colors.ink },
     headStyles: { fontStyle: 'bold', textColor: colors.blue, fillColor: false },
@@ -156,6 +158,5 @@ export async function exportAttendancePdf(source: AttendancePdfSource, filename:
 }
 
 export function attendancePdfFilename(reference: string, from: string, to: string): string {
-  const safeReference = reference.normalize('NFD').replace(/\p{Diacritic}/gu,'').replace(/[^a-zA-Z0-9_-]+/g,'-').replace(/^-+|-+$/g,'').slice(0,100)
-  return `asistencia-${safeReference || 'reporte'}-${from}-${to}.pdf`
+  return reportPdfFilename('asistencia', reference, from, to)
 }

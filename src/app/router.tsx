@@ -1,11 +1,16 @@
 import { createBrowserRouter, redirect } from 'react-router-dom'
 import ApplicationLayout from './layout/application-layout'
+import AuthGuard from '../features/auth/auth-guard'
 
 export const router = createBrowserRouter([
+  { path: '/login', lazy: async () => ({ Component: (await import('../pages/login.page')).default }) },
+  { path: '/change-password', lazy: async () => ({ Component: (await import('../pages/change-password.page')).default }) },
+  { element: <AuthGuard />, children: [
   {
     path: '/',
     element: <ApplicationLayout />,
     children: [
+      { path: 'accounts', lazy: async () => ({ Component: (await import('../pages/accounts.page')).default }) },
       {
         index: true,
         lazy: async () => {
@@ -35,6 +40,14 @@ export const router = createBrowserRouter([
       {
         path: 'daily-attendance',
         lazy: async () => { const { default: Component } = await import('../pages/daily-attendance.page'); return { Component } },
+      },
+      {
+        path: 'overtime',
+        lazy: async () => { const { default: Component } = await import('../pages/overtime.page'); return { Component } },
+      },
+      {
+        path: 'leave-requests',
+        lazy: async () => { const { default: Component } = await import('../pages/leave-requests.page'); return { Component } },
       },
       {
         path: 'attendance-cards',
@@ -81,4 +94,5 @@ export const router = createBrowserRouter([
       },
     ],
   },
+  ] },
 ])

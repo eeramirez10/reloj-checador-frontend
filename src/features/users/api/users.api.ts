@@ -1,4 +1,4 @@
-import { httpClient } from '../../../shared/api/http-client'
+import { apiBaseUrl, httpClient } from '../../../shared/api/http-client'
 import type { DeviceUser, DeviceUserFilters } from '../types/device-user'
 
 export const deviceUserQueryKeys = {
@@ -6,8 +6,6 @@ export const deviceUserQueryKeys = {
   lists: () => [...deviceUserQueryKeys.all, 'list'] as const,
   list: (filters: DeviceUserFilters) => [...deviceUserQueryKeys.lists(), filters] as const,
 }
-
-const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || '/api').replace(/\/$/, '')
 
 export function getDeviceUserPhotoUrl(deviceId: string, userId: string): string {
   return `${apiBaseUrl}/devices/${encodeURIComponent(deviceId)}/users/${encodeURIComponent(userId)}/photo`

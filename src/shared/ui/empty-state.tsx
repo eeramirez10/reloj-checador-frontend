@@ -4,6 +4,7 @@ import Paper from '@mui/material/Paper'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 import type { ReactNode } from 'react'
+import { apiDocsUrl } from '../api/http-client'
 
 type EmptyStateProps = {
   icon: ReactNode
@@ -26,7 +27,7 @@ function EmptyState({ icon, title, description }: EmptyStateProps) {
         <Button
           component="a"
           endIcon={<OpenInNewRoundedIcon />}
-          href="http://127.0.0.1:3005/docs"
+          href={apiDocsUrl}
           rel="noreferrer"
           target="_blank"
           variant="outlined"

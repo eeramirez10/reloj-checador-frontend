@@ -13,6 +13,7 @@ import { useServiceHealth } from '../../features/system/hooks/use-service-health
 import { navigationSections } from './navigation'
 import AccountMenu from '../../features/auth/account-menu'
 import { usePermissions } from '../../features/auth/auth-context'
+import { apiDocsUrl } from '../../shared/api/http-client'
 
 type HeaderProps = {
   collapsed: boolean
@@ -88,7 +89,7 @@ function Header({ collapsed, sidebarWidth, onToggleSidebar, onOpenMobileMenu }: 
             <IconButton
               aria-label="Abrir documentación de la API"
               component="a"
-              href="http://127.0.0.1:3005/docs"
+              href={apiDocsUrl}
               rel="noreferrer"
               size="small"
               target="_blank"

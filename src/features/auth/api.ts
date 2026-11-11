@@ -22,6 +22,7 @@ export interface AccountInput {
   role: AuthAccount['role']
   branchIds: string[]
   isActive: boolean
+  employeeId?: string | null
   password?: string
   expectedVersion?: number
 }

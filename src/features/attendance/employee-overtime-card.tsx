@@ -28,6 +28,7 @@ export default function EmployeeOvertimeCard({ report }: { report: EmployeeOvert
       <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
         <Typography variant="h3" component="h3">{report.employee.name}</Typography>
         <Typography variant="body2" color="text.secondary">{report.employee.employeeNumber ? `Empleado ${report.employee.employeeNumber}` : 'Sin número de empleado'} · {report.employee.branchName || 'Sin sucursal'}</Typography>
+        <Typography variant="body2" color="text.secondary">Empresa: {report.employee.companyName || 'Sin empresa'}</Typography>
       </Box>
       <TableContainer tabIndex={0} role="region" aria-label={`Desglose diario de ${report.employee.name}`}>
         <Table size="small" sx={{ minWidth: 1200, '& th, & td': { verticalAlign: 'top', fontVariantNumeric: 'tabular-nums' }, '& thead': { bgcolor: 'background.default' } }}>

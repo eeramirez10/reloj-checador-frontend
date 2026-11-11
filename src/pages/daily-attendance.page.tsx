@@ -34,6 +34,7 @@ import RouteDetails from '../features/attendance/route-details'
 import { formatOvertime } from '../features/attendance/overtime-format'
 import { leaveAuthorizationText } from '../features/leave/leave-format'
 import { usePermissions } from '../features/auth/auth-context'
+import CompanySelect from '../features/companies/company-select'
 
 function DayDetails({ day, onClose }: { day: DailyAttendance; onClose: () => void }) {
   return <Dialog open fullWidth maxWidth="md" onClose={onClose}>
@@ -65,13 +66,14 @@ export default function DailyAttendancePage() {
   const [from, setFrom] = useState(getToday)
   const [to, setTo] = useState(getToday)
   const [branchId, setBranchId] = useState('')
+  const [companyId,setCompanyId] = useState('')
   const [search, setSearch] = useState('')
   const [tab, setTab] = useState(0)
   const [detail, setDetail] = useState<DailyAttendance | null>(null)
   const [photo, setPhoto] = useState<UserPhotoReference | null>(null)
   const branches = useBranches()
   const timeZone = branches.data?.find((branch) => branch.id === branchId)?.timeZone ?? defaultTimeZone
-  const filters = { from, to, branchId: branchId || undefined }
+  const filters = { from, to, branchId: branchId || undefined,companyId: companyId || undefined }
   const days = useDailyAttendance(filters)
   const deductions = useDeductions(filters)
   const refresh = useOrganizationMutation(recalculateAttendance)
@@ -98,6 +100,7 @@ export default function DailyAttendancePage() {
         }} sx={{ maxWidth: { md: 280 } }}>
           <MenuItem value="">Todas las sucursales</MenuItem>{(branches.data ?? []).map((branch) => <MenuItem key={branch.id} value={branch.id}>{branch.name}</MenuItem>)}
         </TextField>
+        <CompanySelect value={companyId} onChange={setCompanyId} />
         <TextField fullWidth size="small" label="Buscar persona" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Nombre, empleado o ID del reloj" />
       </Stack></Paper>
       <Typography variant="caption" color="text.secondary">{branchId ? `Horas en ${getTimeZoneLabel(timeZone)}.` : 'Cada jornada se muestra en la hora local de su sucursal.'}</Typography>
@@ -112,7 +115,9 @@ export default function DailyAttendancePage() {
             return <TableRow hover key={day.id}>
               <TableCell><Stack direction="row" spacing={1.25} sx={{ alignItems: 'center' }}>
                 {photoUser ? <UserPhotoAvatar user={photoUser} onClick={() => setPhoto(photoUser)} /> : <Avatar sx={{ width: 36, height: 36 }}>{result.name.slice(0, 1)}</Avatar>}
-                <Stack><Typography variant="caption" color="text.secondary">{day.date} · {result.branchName || 'Sin sucursal'}</Typography><Typography variant="body2" sx={{ fontWeight: 500 }}>{result.name}</Typography><Typography variant="caption" color="text.secondary">{result.employeeNumber ? `Empleado ${result.employeeNumber}` : `ID reloj ${result.userIds.join(', ')}`}</Typography></Stack>
+                <Stack><Typography variant="caption" color="text.secondary">{day.date} · {result.branchName || 'Sin sucursal'}</Typography><Typography variant="body2" sx={{ fontWeight: 500 }}>{result.name}</Typography>
+                  <Typography variant="caption" color="text.secondary">Empresa: {day.companyName || 'Sin empresa'}</Typography>
+                  <Typography variant="caption" color="text.secondary">{result.employeeNumber ? `Empleado ${result.employeeNumber}` : `ID reloj ${result.userIds.join(', ')}`}</Typography></Stack>
               </Stack></TableCell>
               <TableCell>{time(result.entry)}</TableCell><TableCell>{time(result.mealDeparture)}</TableCell>
               <TableCell><Stack><Typography variant="body2">{time(result.mealReturn)}</Typography>{result.expectedMealReturn && <Typography variant="caption" color="text.secondary">Previsto {time(result.expectedMealReturn)}</Typography>}{result.mealMinutes !== undefined && <Typography variant="caption" color="text.secondary">{result.mealMinutes} min</Typography>}</Stack></TableCell>
@@ -130,7 +135,7 @@ export default function DailyAttendancePage() {
       </> : <TableContainer component={Paper} variant="outlined"><Table aria-label="Historial de descuentos" sx={{ minWidth: 900 }}>
         <TableHead><TableRow><TableCell>Persona</TableCell><TableCell>Sucursal</TableCell><TableCell>Motivo</TableCell><TableCell>Fecha del retardo que completó el grupo</TableCell><TableCell>Inicio del periodo</TableCell><TableCell>Retardos agrupados</TableCell><TableCell>Días de sueldo</TableCell><TableCell>Estatus</TableCell></TableRow></TableHead>
         <TableBody>{visibleDeductions.map((deduction) => <TableRow key={deduction.id}>
-          <TableCell>{deduction.name}</TableCell><TableCell>{deduction.branchName}</TableCell><TableCell>{deduction.category === 'arrival' ? 'Llegada' : 'Comida'}</TableCell>
+          <TableCell><Stack>{deduction.name}<Typography variant="caption" color="text.secondary">{deduction.companyName || 'Sin empresa'}</Typography></Stack></TableCell><TableCell>{deduction.branchName}</TableCell><TableCell>{deduction.category === 'arrival' ? 'Llegada' : 'Comida'}</TableCell>
           <TableCell>{new Intl.DateTimeFormat('es-MX', { timeZone: deduction.timeZone, dateStyle: 'short', timeStyle: 'short' }).format(new Date(deduction.occurredAt))}</TableCell>
           <TableCell>{deduction.windowStart}</TableCell><TableCell>{deduction.incidentIds.length}</TableCell><TableCell>{deduction.salaryDays}</TableCell><TableCell><Chip size="small" label={deduction.voidedAt ? 'Anulado por recálculo' : 'Registrado'} color={deduction.voidedAt ? 'default' : 'warning'} variant="outlined" /></TableCell>
         </TableRow>)}{!visibleDeductions.length && <TableRow><TableCell colSpan={8}>No hay descuentos registrados para este periodo.</TableCell></TableRow>}</TableBody>

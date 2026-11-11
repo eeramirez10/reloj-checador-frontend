@@ -10,6 +10,7 @@ import AssignmentOutlinedIcon from '@mui/icons-material/AssignmentOutlined'
 import SyncAltRoundedIcon from '@mui/icons-material/SyncAltRounded'
 import SpaceDashboardOutlinedIcon from '@mui/icons-material/SpaceDashboardOutlined'
 import ManageAccountsOutlinedIcon from '@mui/icons-material/ManageAccountsOutlined'
+import BusinessOutlinedIcon from '@mui/icons-material/BusinessOutlined'
 import type { ReactNode } from 'react'
 
 export interface NavigationItem {
@@ -24,6 +25,12 @@ export interface NavigationSection {
 }
 
 export const navigationSections: NavigationSection[] = [
+  { label: 'Mi espacio',items: [
+    { label: 'Mi asistencia de hoy',path: '/my/today',icon: <AccessTimeRoundedIcon fontSize="small" /> },
+    { label: 'Mi tarjeta de asistencia',path: '/my/card',icon: <AssignmentOutlinedIcon fontSize="small" /> },
+    { label: 'Mis permisos',path: '/my/permissions',icon: <EventAvailableOutlinedIcon fontSize="small" /> },
+    { label: 'Mi perfil',path: '/my/profile',icon: <BadgeOutlinedIcon fontSize="small" /> },
+  ] },
   {
     label: 'General',
     items: [{ label: 'Resumen', path: '/', icon: <SpaceDashboardOutlinedIcon fontSize="small" /> }],
@@ -31,6 +38,7 @@ export const navigationSections: NavigationSection[] = [
   {
     label: 'Administración',
     items: [
+      { label: 'Empresas',path: '/companies',icon: <BusinessOutlinedIcon fontSize="small" /> },
       { label: 'Sucursales', path: '/branches', icon: <StoreOutlinedIcon fontSize="small" /> },
       { label: 'Cuentas de acceso', path: '/accounts', icon: <ManageAccountsOutlinedIcon fontSize="small" /> },
       { label: 'Dispositivos', path: '/devices', icon: <DevicesOtherOutlinedIcon fontSize="small" /> },

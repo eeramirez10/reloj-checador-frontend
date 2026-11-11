@@ -17,8 +17,8 @@ export function useDeductions(filters: ReportFilters) { return useQuery({ queryK
 export function useOrganizationMutation<T, TResult = unknown>(mutationFn: (input: T) => Promise<TResult>) {
   const client = useQueryClient()
   return useMutation({ mutationFn, onSuccess: async () => {
-    await Promise.all(['branches', 'branch-configurations', 'branch-configuration', 'branch-policies', 'work-schedules', 'schedule-assignments', 'employee-scheduling', 'employees', 'employee-history', 'device-users', 'devices', 'attendance', 'daily-attendance', 'deductions', 'overtime-report', 'branch-attendance-cards', 'employee-attendance', 'leave-requests', 'leave-request', 'leave-profile']
-      .map((key) => client.invalidateQueries({ queryKey: [key] })))
+    await Promise.all(['branches', 'branch-configurations', 'branch-configuration', 'branch-policies', 'work-schedules', 'schedule-assignments', 'employee-scheduling', 'employees', 'employee-history', 'device-users', 'devices', 'attendance', 'daily-attendance', 'deductions', 'overtime-report', 'branch-attendance-cards', 'employee-attendance', 'leave-requests', 'leave-request', 'leave-profile','employee-contact','my-profile','my-attendance','manager-options']
+      .concat('companies').map((key) => client.invalidateQueries({ queryKey: [key] })))
   } })
 }
 export async function saveBranch(input: { id?: string; values: Omit<Branch, 'id'> }) {

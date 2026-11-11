@@ -6,7 +6,6 @@ import Dialog from '@mui/material/Dialog'
 import DialogActions from '@mui/material/DialogActions'
 import DialogContent from '@mui/material/DialogContent'
 import DialogTitle from '@mui/material/DialogTitle'
-import MenuItem from '@mui/material/MenuItem'
 import Stack from '@mui/material/Stack'
 import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
@@ -55,15 +54,16 @@ export default function LeaveDetailDialog({ id, onClose }: { id: string; onClose
             {event.comments && <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{event.comments}</Typography>}
             {event.actorAccountName && <Typography component="p" variant="caption" color="text.secondary">Registrado por {event.actorAccountName}.</Typography>}
             {event.actorEmployeeId && <Typography variant="caption" color="text.secondary">Resolución registrada desde la página a nombre de {event.actorEmployeeId === request.managerId ? request.details.managerName : request.details.employeeName}.</Typography>}
-            <Typography component="p" variant="caption" color="text.secondary" sx={{ mb: 0 }}>WhatsApp pendiente de conectar{event.recipientPhone ? ` · Destinatario ${event.recipientPhone}` : ' · Número de destinatario sin configurar'}.</Typography>
+            <Typography component="p" variant="caption" color="text.secondary" sx={{ mb: 0 }}>{event.emailStatus ? `Correo: ${{ pending: 'en cola',sending: 'enviando',accepted: 'aceptado por Microsoft',failed: 'falló el envío',uncertain: 'requiere revisión',expired: 'vencido' }[event.emailStatus] ?? event.emailStatus}${event.recipientEmail ? ` · ${event.recipientEmail}` : ''}` : 'Correo pendiente de configuración.'}</Typography>
           </Box>)}
         </Stack>
         <Typography variant="caption" color="text.secondary" sx={{ overflowWrap: 'anywhere' }}>Folio {request.id}</Typography>
       </Stack>}</DialogContent>
       <DialogActions sx={{ p: 2, flexWrap: 'wrap', gap: 1 }}>
         <Button onClick={onClose}>Cerrar</Button>
-        {request && ['pending', 'approved'].includes(request.status) && <Button color="inherit" onClick={() => setAction('cancel')}>Cancelar permiso</Button>}
-        {request?.status === 'pending' && <><Button color="error" variant="outlined" onClick={() => setAction('reject')}>Rechazar</Button><Button variant="contained" onClick={() => setAction('approve')}>Aprobar</Button></>}
+        {detail.data?.capabilities.canCancel && <Button color="inherit" onClick={() => setAction('cancel')}>Cancelar permiso</Button>}
+        {detail.data?.capabilities.canReject && <Button color="error" variant="outlined" onClick={() => setAction('reject')}>Rechazar</Button>}
+        {detail.data?.capabilities.canApprove && <Button variant="contained" onClick={() => setAction('approve')}>Aprobar</Button>}
       </DialogActions>
     </Dialog>
     {action && request && <ResolutionDialog key={`${request.version}:${action}`} request={request} action={action} onClose={() => setAction(null)} />}
@@ -72,13 +72,10 @@ export default function LeaveDetailDialog({ id, onClose }: { id: string; onClose
 
 function ResolutionDialog({ request, action, onClose }: { request: LeaveRequest; action: Resolution; onClose: () => void }) {
   const [comments, setComments] = useState('')
-  const [actor, setActor] = useState(request.managerId)
-  const mutation = useOrganizationMutation(async () => resolveLeave(request.id, { action, actorEmployeeId: actor, comments, expectedVersion: request.version }))
+  const mutation = useOrganizationMutation(async () => resolveLeave(request.id, { action, comments, expectedVersion: request.version }))
   return <EditorDialog title={resolutionLabels[action]} onClose={onClose} onSave={() => mutation.mutateAsync(undefined)} saveLabel={resolutionLabels[action]}>
     <Typography variant="body2">{request.details.employeeName} · {leaveKindLabels[request.kind]} · {formatCardDate(request.from)} al {formatCardDate(request.to)}.</Typography>
-    {action === 'cancel' ? <TextField select label="Cancelación a nombre de" value={actor} onChange={(event) => setActor(event.target.value)}>
-      <MenuItem value={request.managerId}>{request.details.managerName} (jefe)</MenuItem><MenuItem value={request.employeeId}>{request.details.employeeName} (empleado)</MenuItem>
-    </TextField> : <TextField label="Resolución a nombre de" value={request.details.managerName} slotProps={{ input: { readOnly: true } }} />}
+    <Typography variant="body2" color="text.secondary">La acción quedará registrada con tu cuenta de acceso.</Typography>
     {request.useVacation && (action === 'approve' || action === 'cancel' && request.status === 'approved') && <Alert severity="info">
       {action === 'approve' ? 'Se descontarán' : 'Se devolverán'} {request.details.days.length} días de vacaciones.
     </Alert>}

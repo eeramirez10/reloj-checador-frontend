@@ -21,13 +21,13 @@ export default function LoginPage() {
   const from = location.state?.from
   const destination = typeof from === 'string' && from.startsWith('/') && !from.startsWith('//') && !from.startsWith('/login') ? from : '/'
   if (auth.isPending) return <PageLoading />
-  if (auth.account) return <Navigate to={auth.account.mustChangePassword ? '/change-password' : destination} replace />
+  if (auth.account) return <Navigate to={auth.account.mustChangePassword ? '/change-password' : destination} replace state={{ from: destination }} />
 
   async function submit(event: FormEvent) {
     event.preventDefault()
     if (busy) return
     setBusy(true); setError('')
-    try { const account = await auth.login(username, password); navigate(account.mustChangePassword ? '/change-password' : destination, { replace: true }) }
+    try { const account = await auth.login(username, password); navigate(account.mustChangePassword ? '/change-password' : destination, { replace: true,state: { from: destination } }) }
     catch (error) { setError(getApiErrorMessage(error)) }
     finally { setBusy(false) }
   }

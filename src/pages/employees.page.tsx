@@ -42,6 +42,7 @@ import { getApiErrorMessage } from '../shared/api/api-error'
 import PageHeader from '../shared/ui/page-header'
 import PageLoading from '../shared/ui/page-loading'
 import { usePermissions } from '../features/auth/auth-context'
+import CompanySelect from '../features/companies/company-select'
 
 const pageSize = 25
 type EmploymentStatusFilter = 'active' | 'inactive' | 'all'
@@ -64,7 +65,6 @@ function EmployeeIdentity({ employee, photoUser, onPhoto }: { employee: Employee
 
 export default function EmployeesPage() {
   const { canManagePersonnel } = usePermissions()
-  const employees = useEmployees({ limit: 500 })
   const devices = useDevices()
   const branches = useBranches()
   const schedules = useSchedules()
@@ -74,6 +74,8 @@ export default function EmployeesPage() {
   const [tab, setTab] = useState('confirmed')
   const [search, setSearch] = useState('')
   const [branchId, setBranchId] = useState('')
+  const [companyId,setCompanyId] = useState('')
+  const employees = useEmployees({ limit: 500,branchId: branchId || undefined,companyId: companyId || undefined })
   const [deviceId, setDeviceId] = useState('')
   const [statusFilter, setStatusFilter] = useState<EmploymentStatusFilter>('active')
   const [page, setPage] = useState(1)
@@ -159,6 +161,7 @@ export default function EmployeesPage() {
         <TextField disabled={photos.isPending} fullWidth select size="small" label="Reloj asignado" sx={{ maxWidth: { md: 280 } }} value={deviceId} onChange={(event) => { setDeviceId(event.target.value); resetSelection() }}>
           <MenuItem value="">Todos los relojes</MenuItem><MenuItem value="unassigned">Sin reloj asignado</MenuItem>{scopedDevices.map((device) => <MenuItem key={device.id} value={device.id}>{device.name}</MenuItem>)}
         </TextField>
+        <CompanySelect value={companyId} disabled={photos.isPending} onChange={value => { setCompanyId(value); resetSelection() }} />
         <TextField disabled={photos.isPending} fullWidth select size="small" label="Estado" sx={{ maxWidth: { md: 180 } }} value={statusFilter} onChange={(event) => { setStatusFilter(event.target.value as EmploymentStatusFilter); resetSelection() }}>
           <MenuItem value="active">Activos</MenuItem><MenuItem value="inactive">Inactivos</MenuItem><MenuItem value="all">Todos los estados</MenuItem>
         </TextField>
@@ -183,7 +186,7 @@ export default function EmployeesPage() {
           <TableHead><TableRow>
             <TableCell padding="checkbox" sx={{ position: 'sticky', left: 0, zIndex: 2, bgcolor: 'background.paper' }}><Checkbox disabled={photos.isPending} slotProps={{ input: { 'aria-label': 'Seleccionar página de empleados' } }} checked={visible.length > 0 && visible.every((employee) => selected.has(employee.id))} indeterminate={visible.some((employee) => selected.has(employee.id)) && !visible.every((employee) => selected.has(employee.id))}
               onChange={(event) => setSelected((current) => { const next = new Set(current); for (const employee of visible) { if (event.target.checked) next.add(employee.id); else next.delete(employee.id) } return next })} /></TableCell>
-            <TableCell sx={{ position: 'sticky', left: 48, zIndex: 2, bgcolor: 'background.paper' }}>Empleado</TableCell><TableCell>RFC / NSS</TableCell><TableCell>Sucursal</TableCell><TableCell>Reloj / ID</TableCell><TableCell>Horario</TableCell><TableCell>Estatus</TableCell><TableCell>Acciones</TableCell>
+            <TableCell sx={{ position: 'sticky', left: 48, zIndex: 2, bgcolor: 'background.paper' }}>Empleado</TableCell><TableCell>RFC / NSS</TableCell><TableCell>Sucursal</TableCell><TableCell>Empresa</TableCell><TableCell>Reloj / ID</TableCell><TableCell>Horario</TableCell><TableCell>Estatus</TableCell><TableCell>Acciones</TableCell>
           </TableRow></TableHead>
           <TableBody>{visibleRows.map(({ employee, clock, photoUser, scheduleLabel }) => {
             return <TableRow hover key={employee.id}>
@@ -191,12 +194,13 @@ export default function EmployeesPage() {
               <TableCell sx={{ minWidth: 240, position: 'sticky', left: 48, zIndex: 1, bgcolor: 'background.paper' }}><EmployeeIdentity employee={employee} photoUser={photoUser} onPhoto={setPhoto} /></TableCell>
               <TableCell><Stack><Typography variant="body2">{employee.rfc || '—'}</Typography><Typography variant="caption" color="text.secondary">{employee.imss || '—'}</Typography></Stack></TableCell>
               <TableCell>{employee.branchName || 'Sin asignar'}</TableCell>
+              <TableCell>{employee.companyName || 'Sin empresa'}</TableCell>
               <TableCell>{clock ? <Stack><Typography variant="body2">{clock.deviceName}</Typography><Typography variant="caption" color="text.secondary">ID {clock.userId}</Typography></Stack> : 'Sin reloj asignado'}</TableCell>
               <TableCell>{scheduleLabel}</TableCell>
               <TableCell><EmployeeStatus employee={employee} /></TableCell>
               <TableCell><EmployeeActionsMenu employee={employee} actions={actions} /></TableCell>
             </TableRow>
-          })}{!visible.length && <TableRow><TableCell colSpan={8}>No hay empleados con estos filtros. Agrega una ficha o sincroniza los registros de un reloj.</TableCell></TableRow>}</TableBody>
+          })}{!visible.length && <TableRow><TableCell colSpan={9}>No hay empleados con estos filtros. Agrega una ficha o sincroniza los registros de un reloj.</TableCell></TableRow>}</TableBody>
         </Table></TableContainer>
         <Stack spacing={1.5} sx={{ display: { xs: 'flex', md: 'none' } }}>
           {visibleRows.map(({ employee, clock, photoUser, scheduleLabel }) => <Paper key={employee.id} variant="outlined" sx={{ p: 2 }}>
@@ -207,6 +211,7 @@ export default function EmployeesPage() {
               </Stack>
               <EmployeeStatus employee={employee} />
               <Typography variant="body2">Sucursal: {employee.branchName || 'Sin asignar'}</Typography>
+              <Typography variant="body2">Empresa: {employee.companyName || 'Sin empresa'}</Typography>
               <Typography variant="body2">Reloj: {clock ? `${clock.deviceName}, ID ${clock.userId}` : 'Sin reloj asignado'}</Typography>
               <Typography variant="caption" color="text.secondary">Horario: {scheduleLabel}</Typography>
               <Typography variant="caption" color="text.secondary">RFC: {employee.rfc || '—'}. NSS: {employee.imss || '—'}.</Typography>

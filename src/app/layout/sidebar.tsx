@@ -28,7 +28,8 @@ type SidebarContentProps = {
 function SidebarContent({ collapsed, onNavigate }: SidebarContentProps) {
   const { pathname } = useLocation()
   const { account } = useAuth()
-  const sections = navigationSections.map(section => ({ ...section, items: section.items.filter(item => account && canOpenPage(account.role, item.path)) })).filter(section => section.items.length)
+  const sections = navigationSections.map(section => ({ ...section, items: section.items.filter(item => account && canOpenPage(account.role, item.path)
+    && (!item.path.startsWith('/my/') || Boolean(account.employeeId)) && (account.role !== 'employee' || item.path !== '/')) })).filter(section => section.items.length)
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -123,7 +124,7 @@ function SidebarContent({ collapsed, onNavigate }: SidebarContentProps) {
       {!collapsed && (
         <Box sx={{ borderTop: 1, borderColor: 'divider', px: 2.5, py: 1.75 }}>
           <Typography color="text.secondary" variant="caption">
-            {account ? `${roleLabels[account.role]} · ${account.role === 'admin' ? 'Todas las sucursales' : `${account.branchIds.length} sucursales autorizadas`}` : 'Asistencia local'}
+            {account ? `${roleLabels[account.role]} · ${account.role === 'admin' ? 'Todas las sucursales' : account.role === 'employee' ? 'Acceso personal' : `${account.branchIds.length} sucursales autorizadas`}` : 'Asistencia local'}
           </Typography>
         </Box>
       )}

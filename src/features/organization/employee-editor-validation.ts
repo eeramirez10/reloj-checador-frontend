@@ -5,6 +5,8 @@ import type { WorkSchedule } from './types'
 
 export const employeeEditorTabs = [
   { value: 'general', label: 'Datos generales' },
+  { value: 'contact', label: 'Contacto' },
+  { value: 'access', label: 'Acceso al sistema' },
   { value: 'schedule', label: 'Jornada' },
   { value: 'meal', label: 'Comida' },
   { value: 'overtime', label: 'Horas extras' },
@@ -39,6 +41,7 @@ export function employeeEditorErrorTab(error: unknown): EmployeeEditorTab | unde
   if (isAxiosError<{ issues?: Array<{ path: Array<string | number> }> }>(error)) {
     const path = error.response?.data.issues?.[0]?.path ?? []
     if (path[0] === 'leaveProfile') return 'leave'
+    if (path[0] === 'contact') return 'contact'
     if (path.includes('meal') || path.includes('mealMode')) return 'meal'
     if (path.includes('overtime')) return 'overtime'
     if (path[0] === 'scheduling') return 'schedule'

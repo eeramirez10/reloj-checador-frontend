@@ -4,7 +4,7 @@ import Stack from '@mui/material/Stack'
 import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
 import { useState, type FormEvent } from 'react'
-import { Link, Navigate, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../features/auth/auth-context'
 import AuthShell from '../features/auth/auth-shell'
 import { httpClient } from '../shared/api/http-client'
@@ -14,13 +14,14 @@ import PageLoading from '../shared/ui/page-loading'
 export default function ChangePasswordPage() {
   const auth = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmation, setConfirmation] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   if (auth.isPending) return <PageLoading />
-  if (!auth.account) return <Navigate to="/login" replace />
+  if (!auth.account) return <Navigate to="/login" replace state={{ from: location.state?.from }} />
   async function submit(event: FormEvent) {
     event.preventDefault()
     if (busy) return
@@ -29,7 +30,7 @@ export default function ChangePasswordPage() {
     try {
       await httpClient.post('/auth/change-password', { currentPassword, newPassword })
       await auth.clear()
-      navigate('/login', { replace: true, state: { passwordChanged: true } })
+      navigate('/login', { replace: true, state: { passwordChanged: true,from: location.state?.from } })
     } catch (error) { setError(getApiErrorMessage(error)) }
     finally { setBusy(false) }
   }

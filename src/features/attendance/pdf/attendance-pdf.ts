@@ -42,6 +42,7 @@ function drawHeader(doc: PdfDocument, card: EmployeeAttendanceCard, source: Atte
   const details = [
     [`Puesto: ${card.employee.position || 'No registrado'}`,`Sucursal actual: ${card.employee.branchName || 'Sin asignar'}`],
     [`RFC: ${card.employee.rfc || 'No registrado'}`,`NSS: ${card.employee.imss || 'No registrado'}`],
+    [`Empresa actual: ${card.employee.companyName || 'Sin empresa'}`, ''],
   ]
   for (const [left,right] of details) {
     const leftLines: string[] = doc.splitTextToSize(left,columnWidth)

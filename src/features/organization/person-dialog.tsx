@@ -28,36 +28,47 @@ import EditorDialog from './editor-dialog'
 import { getPersonalProfileChanges, type PersonalProfileValues } from './personal-profile'
 import type { Branch, WorkSchedule } from './types'
 import { usePermissions } from '../auth/auth-context'
+import { contactValues, contactInput, useEmployeeContact, type EmployeeContact } from '../portal/api'
+import EmployeeContactFields from '../employees/employee-contact-fields'
+import EmployeeAccessFields from '../employees/employee-access-fields'
+import CompanySelect from '../companies/company-select'
+import { useCompanies } from '../companies/api'
 
 export function EmployeeDialog({ employee, initialTab = 'general', onClose }: {
   employee?: Employee; initialTab?: EmployeeEditorTab; onClose: () => void
 }) {
   const branches = useBranches()
+  const companies = useCompanies()
   const schedules = useSchedules()
   const scheduling = useEmployeeScheduling(employee?.id)
   const profile = useLeaveProfile(employee?.identificationStatus === 'confirmed' ? employee.id : undefined)
   const employees = useEmployees({ limit: 500 })
-  const queries = [branches, schedules, ...(employee ? [scheduling] : []), ...(employee?.identificationStatus === 'confirmed' ? [profile, employees] : [])]
+  const contact = useEmployeeContact(employee?.id)
+  const queries = [branches,companies, schedules, ...(employee ? [scheduling,contact] : []), ...(employee?.identificationStatus === 'confirmed' ? [profile, employees] : [])]
   const failed = queries.find((query) => query.isError)
   if (queries.some((query) => query.isPending) || failed) return <EditorDialog title={employee ? 'Editar empleado' : 'Agregar empleado'}
     onClose={onClose} onSave={async () => {}} saveDisabled stableHeight>
     {failed ? <><Alert severity="error">{getApiErrorMessage(failed.error)}</Alert><Button onClick={() => void failed.refetch()}>Reintentar</Button></> : <PageLoading />}
   </EditorDialog>
   return <EmployeeEditor key={employee?.id ?? 'new'} employee={employee} initialTab={initialTab} onClose={onClose}
-    branches={branches.data ?? []} schedules={schedules.data ?? []} schedulingView={scheduling.data} profile={profile.data} employees={employees.data ?? []} />
+    branches={branches.data ?? []} schedules={schedules.data ?? []} schedulingView={scheduling.data} profile={profile.data} employees={employees.data ?? []} contact={contact.data} />
 }
 
-function EmployeeEditor({ employee, initialTab, onClose, branches, schedules, schedulingView, profile, employees }: {
+function EmployeeEditor({ employee, initialTab, onClose, branches, schedules, schedulingView, profile, employees, contact }: {
   employee?: Employee; initialTab: EmployeeEditorTab; onClose: () => void; branches: Branch[]; schedules: WorkSchedule[]
   schedulingView?: EmployeeSchedulingView; profile?: LeaveProfile; employees: Employee[]
+  contact?: EmployeeContact
 }) {
   const id = useId()
   const { isAdmin } = usePermissions()
   const [tab, setTab] = useState<EmployeeEditorTab>(initialTab === 'leave' && !profile ? 'general' : initialTab)
   const [branchId, setBranchId] = useState(employee?.branchId ?? '')
+  const [companyId,setCompanyId] = useState(employee?.companyId ?? '')
   const [isActive, setIsActive] = useState(employee?.isActive ?? true)
   const [initialPersonal] = useState<PersonalProfileValues>(() => ({ firstName: employee?.firstName ?? '', lastName: employee?.lastName ?? '', rfc: employee?.rfc ?? '', socialSecurityNumber: employee?.imss ?? '' }))
   const [personal, setPersonal] = useState(initialPersonal)
+  const [initialContact] = useState(() => contactValues(contact))
+  const [contactValue,setContactValue] = useState(initialContact)
   const branch = branches.find((item) => item.id === branchId)
   const [initialScheduling] = useState(() => getInitialEmployeeScheduling(schedulingView, getToday(branch?.timeZone)))
   const [scheduling, setScheduling] = useState(initialScheduling)
@@ -74,14 +85,16 @@ function EmployeeEditor({ employee, initialTab, onClose, branches, schedules, sc
     try {
       if (!employee) {
         if (!personal.firstName.trim()) throw new Error('Completa Nombre(s) para crear al empleado.')
-        await httpClient.post('/employees', { ...personal, branchId, ...(schedulingChanged ? { scheduling } : {}) })
+        await httpClient.post('/employees', { ...personal, branchId,companyId: companyId || null, ...(schedulingChanged ? { scheduling } : {}) })
         return
       }
       const changes: Record<string, unknown> = getPersonalProfileChanges(personal, initialPersonal)
+      if ((companyId || null) !== (employee.companyId ?? null)) changes.companyId = companyId || null
       if (isActive !== employee.isActive) changes.isActive = isActive
       if (schedulingChanged) changes.scheduling = scheduling
       const leaveProfile = initialProfile && employeeLeaveChanges(leave, initialProfile)
       if (leaveProfile) changes.leaveProfile = leaveProfile
+      if (contact && JSON.stringify(contactValue) !== JSON.stringify(initialContact)) changes.contact = contactInput(contactValue,contact.version)
       if (Object.keys(changes).length) await httpClient.patch(`/employees/${employee.id}`, changes)
     } catch (error) {
       const errorTab = employeeEditorErrorTab(error)
@@ -114,10 +127,10 @@ function EmployeeEditor({ employee, initialTab, onClose, branches, schedules, sc
   }
 
   return <EditorDialog title={employee ? 'Editar empleado' : 'Agregar empleado'} onClose={onClose} onSave={() => mutation.mutateAsync()}
-    onValidate={validate} stableHeight operationBusy={clockBusy} saveDisabled={tab === 'clock'} header={<Box sx={{ px: { xs: 2, sm: 3 }, minWidth: 0 }}>
+    onValidate={validate} stableHeight operationBusy={clockBusy} saveDisabled={tab === 'clock' || tab === 'access'} header={<Box sx={{ px: { xs: 2, sm: 3 }, minWidth: 0 }}>
       {employee && <Typography variant="body2" color="text.secondary" sx={{ mb: 1, overflowWrap: 'anywhere' }}>{employee.name}</Typography>}
       <Tabs value={tab} onChange={(_, value: EmployeeEditorTab) => setTab(value)} variant="scrollable" scrollButtons="auto" allowScrollButtonsMobile aria-label="Secciones del empleado">
-        {employeeEditorTabs.filter((item) => (item.value !== 'leave' || Boolean(initialProfile)) && (item.value !== 'clock' || Boolean(employee && isAdmin))).map((item) => <Tab key={item.value} value={item.value} label={item.label} disabled={clockBusy}
+        {employeeEditorTabs.filter((item) => (!['contact','access'].includes(item.value) || Boolean(employee)) && (item.value !== 'leave' || Boolean(initialProfile)) && (item.value !== 'clock' || Boolean(employee && isAdmin))).map((item) => <Tab key={item.value} value={item.value} label={item.label} disabled={clockBusy}
           id={`${id}-${item.value}-tab`} aria-controls={`${id}-${item.value}-panel`} sx={{ minWidth: 'auto', px: 2 }} />)}
       </Tabs>
     </Box>}>
@@ -125,8 +138,11 @@ function EmployeeEditor({ employee, initialTab, onClose, branches, schedules, sc
     <Box hidden={!schedulingTab} data-editor-tab="schedule"><TextField required fullWidth type="date" label="Aplicar desde" value={scheduling.effectiveFrom}
       onChange={(event) => setScheduling((current) => ({ ...current, effectiveFrom: event.target.value }))} slotProps={{ inputLabel: { shrink: true } }}
       helperText={`Fecha compartida por Jornada, Comida y Horas extras.${schedulingView?.firstAttendanceDate ? ` Primera checada: ${schedulingView.firstAttendanceDate}.` : ''} Las versiones anteriores se conservan.`} /></Box>
-    {panel('general', <EmployeeGeneralFields employee={employee} personal={personal} branches={branches} branchId={branchId} isActive={isActive}
-      onPersonalChange={(key, value) => setPersonal((current) => ({ ...current, [key]: value }))} onBranchChange={setBranchId} onActiveChange={setIsActive} />)}
+    {panel('general', <><EmployeeGeneralFields employee={employee} personal={personal} branches={branches} branchId={branchId} isActive={isActive}
+      onPersonalChange={(key, value) => setPersonal((current) => ({ ...current, [key]: value }))} onBranchChange={setBranchId} onActiveChange={setIsActive} />
+      <CompanySelect assignment retainedId={employee?.companyId} value={companyId} onChange={setCompanyId} /></>)}
+    {employee && panel('contact',<EmployeeContactFields value={contactValue} onChange={setContactValue} />)}
+    {employee && tab === 'access' && panel('access',<EmployeeAccessFields employeeId={employee.id} hasUnsavedContact={JSON.stringify(contactValue) !== JSON.stringify(initialContact)} />)}
     {panel('schedule', <EmployeeWorkHoursFields value={scheduling} base={baseSchedule} onChange={setScheduling} />)}
     {panel('meal', <EmployeeMealFields value={scheduling} base={baseSchedule} onChange={setScheduling} />)}
     {panel('overtime', <EmployeeOvertimeFields value={scheduling.overtime} onChange={(overtime) => setScheduling((current) => ({ ...current, overtime }))} />)}

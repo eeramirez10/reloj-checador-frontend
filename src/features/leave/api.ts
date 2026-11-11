@@ -8,17 +8,17 @@ export function useLeaveRequests(filters: LeaveFilters) {
 }
 export function useLeaveDetail(id: string) {
   return useQuery({ queryKey: ['leave-request', id], queryFn: async ({ signal }) =>
-    (await httpClient.get<{ request: LeaveRequest; events: LeaveEvent[] }>(`/leave-requests/${id}`, { signal })).data })
+    (await httpClient.get<{ request: LeaveRequest; events: LeaveEvent[]; capabilities: { canApprove: boolean; canReject: boolean; canCancel: boolean } }>(`/leave-requests/${id}`, { signal })).data })
 }
 export function useLeaveProfile(id?: string) {
   return useQuery({ queryKey: ['leave-profile', id], enabled: Boolean(id), queryFn: async ({ signal }) =>
     (await httpClient.get<LeaveProfile>(`/employees/${id}/leave-profile`, { signal })).data })
 }
 export async function saveLeaveProfile(id: string, input: LeaveProfileInput) { return httpClient.put(`/employees/${id}/leave-profile`, input) }
-export async function previewLeave(input: LeaveInput) { return (await httpClient.post<LeavePreview>('/leave-requests/preview', input)).data }
-export async function createLeave(input: LeaveInput, previewToken: string, sourceKey: string) {
-  return (await httpClient.post<LeaveRequest>('/leave-requests', { input, previewToken, sourceKey })).data
+export async function previewLeave(input: LeaveInput, selfService = false) { return (await httpClient.post<LeavePreview>(`${selfService ? '/me' : ''}/leave-requests/preview`, input)).data }
+export async function createLeave(input: LeaveInput, previewToken: string, sourceKey: string, selfService = false) {
+  return (await httpClient.post<LeaveRequest>(`${selfService ? '/me' : ''}/leave-requests`, { input, previewToken, sourceKey })).data
 }
-export async function resolveLeave(id: string, input: { action: 'approve' | 'reject' | 'cancel'; expectedVersion: number; actorEmployeeId: string; comments: string }) {
+export async function resolveLeave(id: string, input: { action: 'approve' | 'reject' | 'cancel'; expectedVersion: number; comments: string }) {
   return httpClient.post(`/leave-requests/${id}/resolve`, input, { timeout: 120_000 })
 }

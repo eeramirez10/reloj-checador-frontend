@@ -9,23 +9,28 @@ import TableRow from '@mui/material/TableRow'
 import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
 import type { Employee } from '../employees/types/employee'
-import EmployeeSelect from './employee-select'
+import Autocomplete from '@mui/material/Autocomplete'
+import Alert from '@mui/material/Alert'
+import { useManagerOptions } from '../portal/api'
+import { getApiErrorMessage } from '../../shared/api/api-error'
 import { formatLeaveTimestamp } from './leave-format'
 import type { LeaveProfile } from './types'
 import type { EmployeeLeaveValues } from './employee-leave-form'
 
-export default function EmployeeLeaveFields({ employeeId, value, profile, employees, onChange }: {
+export default function EmployeeLeaveFields({ employeeId, value, profile, onChange }: {
   employeeId: string; value: EmployeeLeaveValues; profile: LeaveProfile; employees: Employee[]
   onChange: (value: EmployeeLeaveValues) => void
 }) {
-  const available = employees.filter((employee) => employee.id !== employeeId
-    && (employee.isActive && employee.identificationStatus === 'confirmed' || employee.id === profile.managerId))
+  const managers = useManagerOptions()
+  const available = (managers.data ?? []).filter(employee => employee.id !== employeeId)
+  if (profile.managerId && !available.some(employee => employee.id === profile.managerId)) available.push({ id: profile.managerId,name: profile.managerName ?? 'Jefe registrado',branchName: null })
   const update = (changes: Partial<EmployeeLeaveValues>) => onChange({ ...value, ...changes })
   return <>
-    <EmployeeSelect employees={available} value={value.managerId} onChange={(managerId) => update({ managerId })} label="Jefe directo" />
-    <TextField label="WhatsApp del empleado" type="tel" value={value.whatsappPhone} onChange={(event) => update({ whatsappPhone: event.target.value })}
-      placeholder="+525512345678" helperText="Incluye + y código de país. El WhatsApp del jefe se configura en su propia ficha."
-      slotProps={{ htmlInput: { pattern: '\\+[1-9][0-9]{7,14}', maxLength: 16 } }} />
+    {managers.isError && <Alert severity="error">{getApiErrorMessage(managers.error)}</Alert>}
+    <Autocomplete options={available} value={available.find(employee => employee.id === value.managerId) ?? null} loading={managers.isPending}
+      getOptionKey={employee => employee.id} getOptionLabel={employee => `${employee.name}${employee.branchName ? ` (${employee.branchName})` : ''}`}
+      isOptionEqualToValue={(left,right) => left.id === right.id} onChange={(_,employee) => update({ managerId: employee?.id ?? '' })}
+      renderInput={params => <TextField {...params} label="Jefe directo" helperText="Puede pertenecer a otra sucursal. El jefe necesita una cuenta vinculada para resolver permisos." />} />
     <Box sx={{ pt: 2, borderTop: 1, borderColor: 'divider' }}><Stack spacing={2}>
       <Typography variant="h3" component="h3">Vacaciones</Typography>
       <TextField required type="number" label="Saldo de vacaciones (días)" value={value.vacationBalance}

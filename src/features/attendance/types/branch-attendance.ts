@@ -1,6 +1,8 @@
 import type { EmployeeAttendanceCard } from '../../employees/types/employee-attendance'
+import type { CompanySelection } from '../../companies/api'
 
 export interface BranchAttendanceFilters {
+  companyId?: string
   branchId: string
   employeeStatus: 'active' | 'inactive'
   from: string
@@ -11,6 +13,7 @@ export interface BranchAttendanceRequest extends BranchAttendanceFilters {
   sequence: number
 }
 export interface BranchAttendanceCards {
+  companyFilter?: CompanySelection
   branch: { id: string; name: string; timeZone: string }
   period: { from: string; to: string }
   employeeStatus: 'active' | 'inactive'

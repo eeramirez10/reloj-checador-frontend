@@ -2,6 +2,14 @@
 
 Interfaz de administración de relojes ZKTeco, usuarios y asistencias. Está construida con React, TypeScript, Vite, MUI y React Router.
 
+## Empresas
+
+El administrador gestiona **Administración → Empresas** con nombre, código interno opcional, estado y observaciones. RH/admin asignan una empresa por empleado desde **Datos generales** al crear o editar su ficha. Las empresas inactivas conservan sus vínculos y se pueden consultar, pero no admiten nuevas asignaciones.
+
+**Empleados**, **Asistencia diaria**, **Tarjetas de asistencia** y **Horas extras** combinan Sucursal con Empresa: Todas las empresas, una empresa concreta o Sin empresa. Se utiliza la empresa actual del expediente. Tarjetas, reportes y PDF muestran la empresa; las exportaciones incluyen todos los empleados coincidentes y mantienen los totales del filtro.
+
+**Mi perfil** muestra la empresa del empleado como dato de consulta. Las instrucciones de migración y publicación Windows están en `backend/docs/companies.md`.
+
 ## Fecha y hora de dispositivos
 
 En **Dispositivos → Fecha y hora**, consulta la hora local del reloj y su diferencia respecto de la hora del servidor en la zona horaria de la sucursal. **Sincronizar hora** usa la referencia del servidor. En **Ajustar manualmente**, captura una fecha (2000–2099) y hora con segundos y pulsa **Aplicar fecha y hora manual**. Se envía el valor capturado como hora local de la sucursal y se verifica contra ese valor, considerando los segundos transcurridos. El historial distingue ambos tipos de ajuste y conserva la fecha/hora solicitada, enviada y leída después. Las lecturas muestran cuándo se tomaron; **Consultar hora** las actualiza. México/Querétaro y Cancún utilizan la referencia de su propia sucursal.
@@ -12,7 +20,17 @@ Disponible con TCP/IP directo y una sucursal asignada. Durante el ajuste se bloq
 
 El panel inicia en **Iniciar sesión**. El administrador inicial se crea con `npm run auth:bootstrap` en el backend. Las contraseñas temporales deben cambiarse antes de entrar. El menú de la cuenta permite cambiar contraseña y cerrar sesión.
 
-**Administración → Cuentas de acceso**, exclusivo del administrador, permite crear/editar cuentas, desactivarlas, restablecer contraseñas y asignar una o varias sucursales. Los roles son Administrador, Recursos humanos y Encargado; la sucursal laboral no determina el acceso. El encargado consulta asistencia/reportes y resuelve permisos; RH además gestiona personal, horarios y vacaciones. Las opciones del panel se adaptan al rol y la API valida el alcance. Guardar cambios de acceso cierra las sesiones de la cuenta modificada.
+**Administración → Cuentas de acceso**, exclusivo del administrador, permite crear/editar cuentas, desactivarlas y vincularlas a empleados. Los roles son Administrador, Recursos humanos, Encargado y Empleado. RH/encargados tienen sucursales explícitas; el empleado tiene acceso personal. Solo una cuenta de empleado/encargado vinculada al jefe responsable puede aprobar/rechazar permisos, incluso entre sucursales. RH y administrador tienen esas acciones bloqueadas. Guardar cambios de acceso cierra las sesiones de la cuenta modificada.
+
+## Portal personal y accesos por correo
+
+El rol Empleado entra en **Mi asistencia de hoy**, con actualización cada minuto. **Mi tarjeta de asistencia** permite consultar periodos y exportar únicamente su PDF. **Mis permisos** permite solicitar y seguir sus propios permisos; los jefes también tienen **Por autorizar / mi equipo**. Los enlaces de correo abren el detalle después de iniciar sesión y conservan el destino al cambiar una contraseña temporal.
+
+En **Mi perfil**, cada empleado actualiza su WhatsApp, teléfono alterno y tipo de sangre. El catálogo incluye A+, A-, B+, B-, AB+, AB-, O+ y O-, permitiendo Sin registrar. RH/admin editan esos mismos datos desde **Empleados → Editar → Contacto**, con el correo administrado por ellos. **Permisos y vacaciones** permite seleccionar un jefe de cualquier sucursal.
+
+Después de guardar el correo, **Acceso al sistema** permite capturar libremente el usuario y crear/enviar el acceso temporal desde el buzón de RH. La contraseña vence en 24 horas y exige cambio al entrar. Regenerar el acceso sustituye la contraseña anterior y revoca sesiones. La ficha muestra el estado de la cola de envío; Aceptado por Microsoft no equivale a entrega confirmada.
+
+El backend debe configurar Microsoft Graph y su clave de cifrado; la guía está en `backend/docs/employee-portal-microsoft365.md`. La interfaz funciona en raíz y bajo `/reloj/`, con `VITE_APP_BASE_PATH=/reloj/` y `VITE_API_BASE_URL=/reloj/api` al compilar.
 
 El campo de contraseña temporal incluye **Generar contraseña**, que crea 16 caracteres usando la aleatoriedad criptográfica del navegador, y **Copiar** para compartirla. Permite mostrar/ocultar la contraseña y escribirla manualmente con un mínimo de 8 caracteres. Al editar una cuenta, dejar el campo vacío conserva su contraseña. La contraseña generada se aplica al guardar; el usuario deberá cambiarla al iniciar sesión. Si el navegador no permite copiar automáticamente, se selecciona el texto para copiarlo manualmente.
 

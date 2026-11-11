@@ -30,7 +30,7 @@ function drawHeader(doc: PdfDocument, source: OvertimeReportExport, owners: Map<
   doc.text(`Del ${formatCardDate(source.period.from)} al ${formatCardDate(source.period.to)}`, width / 2, 23, { align: 'center' })
   doc.setFontSize(7.5).setTextColor(colors.gray)
   const employeeCount = `${source.totalEmployees} ${source.totalEmployees === 1 ? 'empleado' : 'empleados'} con extras habilitadas`
-  const scope: string[] = doc.splitTextToSize(`${source.branch.name} · Empleados ${source.employeeStatus === 'active' ? 'activos' : 'inactivos'} · ${employeeCount}`, contentWidth)
+  const scope: string[] = doc.splitTextToSize(`${source.branch.name} · ${source.companyFilter?.name ?? 'Todas las empresas'} · Empleados ${source.employeeStatus === 'active' ? 'activos' : 'inactivos'} · ${employeeCount}`, contentWidth)
   doc.text(scope, width / 2, 28, { align: 'center' })
   let y = 28 + scope.length * 3.2
   doc.setDrawColor(colors.blue).setLineWidth(0.5).line(margin, y, width - margin, y)
@@ -41,7 +41,7 @@ function drawHeader(doc: PdfDocument, source: OvertimeReportExport, owners: Map<
   y += name.length * 4.2 + 1
   doc.setFont('PublicSans', 'normal').setFontSize(7.5)
   const details = employee
-    ? `N.º empleado: ${employeeReference(employee)} · ID del reloj actual: ${clockReference(employee)} · Puesto: ${employee.employee.position || 'No registrado'} · Sucursal actual: ${employee.employee.branchName || 'Sin asignar'}`
+    ? `N.º empleado: ${employeeReference(employee)} · ID del reloj actual: ${clockReference(employee)} · Puesto: ${employee.employee.position || 'No registrado'} · Sucursal actual: ${employee.employee.branchName || 'Sin asignar'} · Empresa actual: ${employee.employee.companyName || 'Sin empresa'}`
     : `Zona de la sucursal: ${source.branch.timeZone}. Duraciones en horas:minutos:segundos, sin redondeos por día.`
   const lines: string[] = doc.splitTextToSize(details, contentWidth)
   doc.text(lines, margin, y)
@@ -58,7 +58,7 @@ function drawSummary(doc: PdfDocument, source: OvertimeReportExport, owners: Map
     startY: top, margin: { top, bottom: footerSpace, left: margin, right: margin }, theme: 'plain', rowPageBreak: 'avoid', showFoot: 'lastPage',
     head: [['N.º empleado / ID reloj', 'Empleado', 'Extras brutas', 'Descanso diario', 'Descanso adicional', 'Extras netas', 'Días calculados', 'Días pendientes', 'Sin registros']],
     body: source.employees.map((report) => [
-      `${employeeReference(report)}\nID: ${clockReference(report)}`, report.employee.name,
+      `${employeeReference(report)}\nID: ${clockReference(report)}`, `${report.employee.name}\nEmpresa: ${report.employee.companyName || 'Sin empresa'}`,
       hours(report.totals.grossSeconds), hours(report.totals.dailyRestSeconds), hours(report.totals.additionalRestSeconds), hours(report.totals.netSeconds),
       report.totals.calculatedDays, report.totals.pendingDays, report.totals.noRecordDays,
     ]),
@@ -148,7 +148,7 @@ export async function generateOvertimePdf(source: OvertimeReportExport, options:
   options.signal.throwIfAborted()
   if (!source.employees.length) throw new Error('No hay empleados con horas extras para exportar con estos filtros.')
   const doc: PdfDocument = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'letter', compress: true, putOnlyUsedFonts: true })
-  doc.setProperties({ title: 'Reporte de horas extras', subject: `${source.branch.name} · ${source.period.from} a ${source.period.to}`, author: 'Reloj Checador', creator: 'Reloj Checador' })
+  doc.setProperties({ title: 'Reporte de horas extras', subject: `${source.branch.name} · ${source.companyFilter?.name ?? 'Todas las empresas'} · ${source.period.from} a ${source.period.to}`, author: 'Reloj Checador', creator: 'Reloj Checador' })
   doc.setCreationDate(new Date(source.generatedAt))
   await registerAttendancePdfFonts(doc, options.signal)
   const owners = new Map<number, PageOwner>()
@@ -172,5 +172,5 @@ export async function exportOvertimePdf(source: OvertimeReportExport, options: P
   const blob = doc.output('blob')
   options.signal.throwIfAborted()
   const status = source.employeeStatus === 'active' ? 'Activos' : 'Inactivos'
-  return { blob, filename: reportPdfFilename('horas-extras', `${source.branch.name}-${status}`, source.period.from, source.period.to) }
+  return { blob, filename: reportPdfFilename('horas-extras', `${source.branch.name}-${source.companyFilter?.name ?? 'todas-empresas'}-${status}`, source.period.from, source.period.to) }
 }

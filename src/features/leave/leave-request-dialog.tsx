@@ -22,19 +22,21 @@ import EmployeeSelect from './employee-select'
 import { EmployeeDialog } from '../organization/person-dialog'
 import { leaveKindLabels } from './leave-format'
 import type { LeaveInput, LeaveKind, LeavePreview } from './types'
+import type { PortalProfile } from '../portal/api'
+import { createRequestKey } from '../../shared/api/request-key'
 
-export default function LeaveRequestDialog({ employees, onClose, onCreated }: { employees: Employee[]; onClose: () => void; onCreated: (id: string) => void }) {
-  const [value, setValue] = useState<LeaveInput>(() => ({ employeeId: '', kind: 'absence', from: getToday(), to: getToday(), authorizedTime: null, paid: true, useVacation: false, reason: '' }))
-  const [sourceKey] = useState(() => crypto.randomUUID())
+export default function LeaveRequestDialog({ employees = [], selfProfile, onClose, onCreated }: { employees?: Employee[]; selfProfile?: PortalProfile; onClose: () => void; onCreated: (id: string) => void }) {
+  const [value, setValue] = useState<LeaveInput>(() => ({ employeeId: selfProfile?.employeeId ?? '', kind: 'absence', from: getToday(selfProfile?.timeZone), to: getToday(selfProfile?.timeZone), authorizedTime: null, paid: true, useVacation: false, reason: '' }))
+  const [sourceKey] = useState(createRequestKey)
   const [preview, setPreview] = useState<LeavePreview | null>(null)
   const [reviewing, setReviewing] = useState(false)
   const [error, setError] = useState('')
   const [configuring, setConfiguring] = useState(false)
   const employee = employees.find((item) => item.id === value.employeeId)
-  const profile = useLeaveProfile(value.employeeId || undefined)
+  const profile = useLeaveProfile(selfProfile ? undefined : value.employeeId || undefined)
   const mutation = useOrganizationMutation(async () => {
     if (!preview) throw new Error('Revisa la solicitud antes de enviarla.')
-    return createLeave(value, preview.token, sourceKey)
+    return createLeave(value, preview.token, sourceKey,Boolean(selfProfile))
   })
   const busy = reviewing || mutation.isPending
   const active = employees.filter((item) => item.isActive && item.identificationStatus === 'confirmed')
@@ -42,7 +44,7 @@ export default function LeaveRequestDialog({ employees, onClose, onCreated }: { 
   async function submit() {
     setError('')
     try {
-      if (!preview) { setReviewing(true); setPreview(await previewLeave(value)) }
+      if (!preview) { setReviewing(true); setPreview(await previewLeave(value,Boolean(selfProfile))) }
       else {
         const result = await mutation.mutateAsync(undefined)
         onCreated(result.id)
@@ -56,7 +58,8 @@ export default function LeaveRequestDialog({ employees, onClose, onCreated }: { 
         <DialogTitle>Nueva solicitud de permiso</DialogTitle>
         <DialogContent dividers><Stack spacing={2.5}>
           {error && <Alert severity="error">{error}</Alert>}
-          <EmployeeSelect employees={active} required value={value.employeeId} onChange={(employeeId) => update({ employeeId })} disabled={busy} />
+          {selfProfile ? <Box><Typography variant="h3">{selfProfile.name}</Typography><Typography variant="body2">Jefe directo: {selfProfile.managerName ?? 'Sin asignar'}. Vacaciones disponibles: {selfProfile.vacationBalance} días.</Typography></Box>
+            : <EmployeeSelect employees={active} required value={value.employeeId} onChange={(employeeId) => update({ employeeId })} disabled={busy} />}
           {employee && <Box sx={{ p: 2, bgcolor: 'background.default', borderLeft: 3, borderColor: 'primary.main' }}><Stack spacing={0.75}>
             <Typography variant="body2">{employee.branchName || 'Sin sucursal'}</Typography>
             {profile.isError ? <Alert severity="error">{getApiErrorMessage(profile.error)} <Button onClick={() => void profile.refetch()}>Reintentar</Button></Alert>

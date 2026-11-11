@@ -19,6 +19,7 @@ import PageHeader from '../shared/ui/page-header'
 import PageLoading from '../shared/ui/page-loading'
 import AttendancePdfActions from '../features/attendance/pdf/attendance-pdf-actions'
 import { useAttendancePdfExport } from '../features/attendance/pdf/use-attendance-pdf-export'
+import CompanySelect from '../features/companies/company-select'
 
 type FilterDraft = Omit<BranchAttendanceFilters, 'employeeStatus'> & { employeeStatus: BranchAttendanceFilters['employeeStatus'] | '' }
 
@@ -29,7 +30,7 @@ export default function OvertimePage() {
   const sequence = useRef(0)
   const results = useRef<HTMLDivElement>(null)
   const report = useOvertimeReport(request)
-  const pdf = useAttendancePdfExport(request ? `overtime:${request.branchId}:${request.employeeStatus}:${request.from}:${request.to}` : 'empty')
+  const pdf = useAttendancePdfExport(request ? `overtime:${request.branchId}:${request.companyId ?? 'all'}:${request.employeeStatus}:${request.from}:${request.to}` : 'empty')
   const dateError = filters.from && filters.to ? validateAttendancePeriod(filters) : null
   const ready = Boolean(filters.branchId && filters.employeeStatus && filters.from && filters.to && !dateError)
 
@@ -40,7 +41,7 @@ export default function OvertimePage() {
   }
   function consult(page = 1) {
     if (!ready || !filters.employeeStatus || pdf.busy) return
-    setRequest({ branchId: filters.branchId, employeeStatus: filters.employeeStatus, from: filters.from, to: filters.to, page, sequence: ++sequence.current })
+    setRequest({ branchId: filters.branchId,companyId: filters.companyId || undefined, employeeStatus: filters.employeeStatus, from: filters.from, to: filters.to, page, sequence: ++sequence.current })
   }
   function exportPdf() {
     if (!request || report.isFetching || !report.data?.totalEmployees) return
@@ -54,15 +55,16 @@ export default function OvertimePage() {
     })
   }
   return <>
-    <PageHeader title="Horas extras" description="Consulta empleados con horas extras habilitadas, según su sucursal y estado actuales." />
+    <PageHeader title="Horas extras" description="Consulta horas extras por sucursal, empresa y estado actuales del empleado." />
     <Stack spacing={3}>
       {branches.isError && <Alert severity="error">{getApiErrorMessage(branches.error)}</Alert>}
       <Paper component="form" variant="outlined" sx={{ p: 2 }} onSubmit={(event) => { event.preventDefault(); if (pdf.busy) return; pdf.cancel(); consult() }}>
-        <Box sx={{ display: 'grid', gap: 2, alignItems: 'start', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', lg: '1.2fr 1fr 1fr 1fr auto' } }}>
+        <Box sx={{ display: 'grid', gap: 2, alignItems: 'start', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', lg: '1.2fr 1.2fr 1fr 1fr 1fr auto' } }}>
           <TextField fullWidth required select size="small" label="Sucursal" value={filters.branchId} disabled={branches.isPending}
             onChange={(event) => update('branchId', event.target.value)} slotProps={{ select: { displayEmpty: true }, inputLabel: { shrink: true } }}>
             <MenuItem value="" disabled>Selecciona sucursal</MenuItem>{(branches.data ?? []).map((branch) => <MenuItem key={branch.id} value={branch.id}>{branch.name}</MenuItem>)}
           </TextField>
+          <CompanySelect value={filters.companyId ?? ''} onChange={value => update('companyId',value)} />
           <TextField fullWidth required select size="small" label="Estado del empleado" value={filters.employeeStatus}
             onChange={(event) => update('employeeStatus', event.target.value as FilterDraft['employeeStatus'])} slotProps={{ select: { displayEmpty: true }, inputLabel: { shrink: true } }}>
             <MenuItem value="" disabled>Selecciona estado</MenuItem><MenuItem value="active">Activos</MenuItem><MenuItem value="inactive">Inactivos</MenuItem>
@@ -83,6 +85,7 @@ export default function OvertimePage() {
             <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ justifyContent: 'space-between', alignItems: { md: 'center' } }}>
               <Stack spacing={0.5}>
                 <Typography component="h2" variant="h3">{report.data.branch.name} · {report.data.totalEmployees} empleados {report.data.employeeStatus === 'active' ? 'activos' : 'inactivos'}</Typography>
+                <Typography variant="body2">Empresa: {report.data.companyFilter?.name ?? 'Todas las empresas'}</Typography>
                 <Typography variant="body2" color="text.secondary">Del {formatCardDate(report.data.period.from)} al {formatCardDate(report.data.period.to)} · Página {report.data.page} de {report.data.totalPages}</Typography>
               </Stack>
               <AttendancePdfActions pdf={pdf} disabled={report.isFetching} onExport={exportPdf} title="Reporte imprimible en carta horizontal, con todos los empleados y totales de los filtros consultados, incluidas las demás páginas." />

@@ -46,6 +46,7 @@ export default function EmployeeAttendanceCard({ card }: { card: AttendanceCard 
           '& > div:first-of-type': { gridColumn: { xs: '1 / -1', sm: 'auto' } },
           '& dt': { color: 'text.secondary', fontSize: '0.75rem' }, '& dd': { m: 0, mt: 0.5, fontSize: '0.875rem', overflowWrap: 'anywhere' } }}>
           <div><dt>Sucursal actual</dt><dd>{employee.branchName || 'Sin asignar'}</dd></div>
+          <div><dt>Empresa actual</dt><dd>{employee.companyName || 'Sin empresa'}</dd></div>
           <div><dt>RFC</dt><dd>{employee.rfc || 'No registrado'}</dd></div>
           <div><dt>NSS</dt><dd>{employee.imss || 'No registrado'}</dd></div>
         </Box>

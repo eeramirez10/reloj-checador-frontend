@@ -18,5 +18,5 @@ export function useAuth() {
 }
 export function usePermissions() {
   const { account } = useAuth()
-  return { isAdmin: account?.role === 'admin', canManagePersonnel: Boolean(account && account.role !== 'manager') }
+  return { isAdmin: account?.role === 'admin', canManagePersonnel: Boolean(account && ['admin','hr'].includes(account.role)) }
 }

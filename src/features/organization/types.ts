@@ -88,6 +88,8 @@ export interface ScheduleAssignment {
 }
 export type Movement = 'entry' | 'meal_departure' | 'meal_return' | 'exit' | 'unclassified' | 'duplicate' | 'outside_schedule'
 export interface DailyAttendance {
+  companyId?: string | null
+  companyName?: string | null
   id: string
   subjectId: string
   employeeId?: string
@@ -128,6 +130,8 @@ export interface DailyAttendance {
   }
 }
 export interface Deduction {
+  companyId?: string | null
+  companyName?: string | null
   id: string
   subjectId: string
   name: string
@@ -141,4 +145,4 @@ export interface Deduction {
   occurredAt: string
   voidedAt?: string
 }
-export interface ReportFilters { from: string; to: string; branchId?: string; subjectId?: string }
+export interface ReportFilters { from: string; to: string; branchId?: string; subjectId?: string; companyId?: string }

@@ -1,4 +1,5 @@
 import type { EmployeeAttendanceDay, EmployeeAttendanceCard } from '../../employees/types/employee-attendance'
+import type { CompanySelection } from '../../companies/api'
 
 export interface OvertimeSettings {
   enabled: boolean
@@ -52,6 +53,7 @@ export interface EmployeeOvertimeReport {
   totals: OvertimeTotals
 }
 export interface OvertimeReport {
+  companyFilter?: CompanySelection
   branch: { id: string; name: string; timeZone: string }
   period: { from: string; to: string }
   employeeStatus: 'active' | 'inactive'

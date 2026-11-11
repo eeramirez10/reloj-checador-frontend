@@ -18,6 +18,8 @@ export interface EmployeeClockRecord {
 }
 
 export interface Employee {
+  companyId?: string | null
+  companyName?: string | null
   id: string
   branchId?: string
   branchName?: string
@@ -49,6 +51,8 @@ export interface Employee {
 }
 
 export interface EmployeeFilters {
+  branchId?: string
+  companyId?: string
   search?: string
   branchCode?: string
   employmentStatus?: EmploymentStatus

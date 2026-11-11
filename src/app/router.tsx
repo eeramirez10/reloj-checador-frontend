@@ -10,6 +10,11 @@ export const router = createBrowserRouter([
     path: '/',
     element: <ApplicationLayout />,
     children: [
+      { path: 'companies',lazy: async () => ({ Component: (await import('../pages/companies.page')).default }) },
+      { path: 'my/profile',lazy: async () => ({ Component: (await import('../pages/my-profile.page')).default }) },
+      { path: 'my/today',lazy: async () => ({ Component: (await import('../pages/my-attendance.page')).MyTodayPage }) },
+      { path: 'my/card',lazy: async () => ({ Component: (await import('../pages/my-attendance.page')).default }) },
+      { path: 'my/permissions',lazy: async () => ({ Component: (await import('../pages/my-permissions.page')).default }) },
       { path: 'accounts', lazy: async () => ({ Component: (await import('../pages/accounts.page')).default }) },
       {
         index: true,

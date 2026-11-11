@@ -14,7 +14,6 @@ import { roleLabels, type AccountRole, type AuthAccount } from './types'
 import TemporaryPasswordField from './temporary-password-field'
 import { useEmployees } from '../employees/hooks/use-employees'
 import EmployeeSelect from '../leave/employee-select'
-import { httpClient } from '../../shared/api/http-client'
 
 export default function AccountDialog({ account, branches, onClose }: { account?: AuthAccount; branches: Branch[]; onClose: () => void }) {
   const auth = useAuth()
@@ -35,16 +34,11 @@ export default function AccountDialog({ account, branches, onClose }: { account?
     if (role === 'employee' && !employeeId) throw new Error('Vincula un empleado con esta cuenta.')
     setSaving(true)
     try {
-      if (role === 'employee' && !account) {
-        await httpClient.post(`/employees/${employeeId}/access`,{ username })
-        await client.invalidateQueries({ queryKey: ['auth-accounts'] })
-        await client.invalidateQueries({ queryKey: ['employee-access',employeeId] })
-        return
-      }
       await saveAccount({ username, name, role, employeeId: employeeId || null, branchIds: ['admin','employee'].includes(role) ? [] : branchIds, isActive,
         ...(password ? { password } : {}), ...(account ? { expectedVersion: account.version } : {}) }, account?.id)
       await client.invalidateQueries({ queryKey: ['auth-accounts'] })
       await client.invalidateQueries({ queryKey: ['auth-audit'] })
+      await client.invalidateQueries({ queryKey: ['employee-access'] })
     } finally { setSaving(false) }
   }
   return <EditorDialog title={account ? 'Editar cuenta de acceso' : 'Crear cuenta de acceso'} onClose={onClose} onSave={save}>
@@ -64,8 +58,8 @@ export default function AccountDialog({ account, branches, onClose }: { account?
       <Alert severity="info">{role === 'hr' ? 'RH puede gestionar empleados, horarios y vacaciones de sus sucursales. No puede aprobar ni rechazar permisos.' : 'El encargado puede consultar asistencia y reportes de sus sucursales. Solo puede resolver permisos si su empleado vinculado es el jefe asignado.'}</Alert>
     </>}
     <FormControlLabel control={<Switch checked={isActive} disabled={ownAccount} onChange={(_, checked) => setIsActive(checked)} />} label="Cuenta activa" />
-    {role !== 'employee' && <TemporaryPasswordField value={password} onChange={setPassword} required={!account} disabled={saving} />}
-    {role === 'employee' && <Alert severity="info">El acceso temporal se envía al correo registrado del empleado. Para regenerarlo, abre Acceso al sistema en su ficha.</Alert>}
+    <TemporaryPasswordField value={password} onChange={setPassword} required={!account} disabled={saving} />
+    <Alert severity="info">Entrega el usuario y la contraseña temporal directamente a la persona. No se requiere correo ni se enviará un mensaje. La contraseña temporal vence en 24 horas.</Alert>
     {account && <Alert severity="warning">Guardar los cambios cerrará las sesiones abiertas de esta cuenta{ownAccount ? ', incluida tu sesión actual' : ''}.</Alert>}
   </EditorDialog>
 }

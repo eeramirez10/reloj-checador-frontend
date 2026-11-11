@@ -36,7 +36,9 @@ El rol Empleado entra en **Mi asistencia de hoy**, con actualización cada minut
 
 En **Mi perfil**, cada empleado actualiza su WhatsApp, teléfono alterno y tipo de sangre. El catálogo incluye A+, A-, B+, B-, AB+, AB-, O+ y O-, permitiendo Sin registrar. RH/admin editan esos mismos datos desde **Empleados → Editar → Contacto**, con el correo administrado por ellos. **Permisos y vacaciones** permite seleccionar un jefe de cualquier sucursal.
 
-Después de guardar el correo, **Acceso al sistema** permite capturar libremente el usuario y crear/enviar el acceso temporal desde el buzón de RH. La contraseña vence en 24 horas y exige cambio al entrar. Regenerar el acceso sustituye la contraseña anterior y revoca sesiones. La ficha muestra el estado de la cola de envío; Aceptado por Microsoft no equivale a entrega confirmada.
+**Acceso al sistema** inicia en **Manual, sin correo**: captura el usuario, escribe o genera una contraseña temporal, cópiala y pulsa **Crear acceso manual**. Entrega las credenciales directamente. No requiere correo del empleado, Microsoft 365 ni clave de cifrado, y no genera mensajes en cola. **Cuentas de acceso** también permite crear y vincular empleados con contraseña temporal, sin correo; al editar, dejar la contraseña vacía conserva la anterior.
+
+Opcionalmente, después de guardar el correo y configurar el servidor, elige **Enviar por correo** para crear/enviar el acceso desde RH. La contraseña vence en 24 horas y exige cambio al entrar en ambos modos. Regenerar el acceso sustituye la contraseña anterior y revoca sesiones. La ficha muestra el estado de la cola de envío; Aceptado por Microsoft no equivale a entrega confirmada.
 
 El backend debe configurar Microsoft Graph y su clave de cifrado; la guía está en `backend/docs/employee-portal-microsoft365.md`. La interfaz funciona en raíz y bajo `/reloj/`, con `VITE_APP_BASE_PATH=/reloj/` y `VITE_API_BASE_URL=/reloj/api` al compilar.
 

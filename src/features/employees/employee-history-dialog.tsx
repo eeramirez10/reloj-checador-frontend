@@ -44,7 +44,13 @@ export default function EmployeeHistoryDialog({ employee, onClose }: { employee:
           {event.overtime?.enabled && event.overtime.restEnabled && ` Descansos: ${event.overtime.dailyRest ? `${event.overtime.dailyRest.startTime}–${event.overtime.dailyRest.endTime} diario; ` : ''}${event.overtime.additionalRestMinutes} min adicionales por jornada o ruta.`}
        </Typography>)}
        <details>
-        <summary>Respaldo original de la unificación y cambios de identificación</summary>
+         <summary>Eliminaciones de la lista y recuperaciones</summary>
+         {(history.data.discardEvents ?? []).map((event: {id:string;kind:string;reason:string;createdAt:string;actorName:string|null}) => <Typography key={event.id} variant="body2">
+           {new Date(event.createdAt).toLocaleString('es-MX')}: {event.kind==='discarded' ? 'Eliminado de la lista' : 'Recuperado por una checada'}. {event.reason}{event.actorName ? ` Por ${event.actorName}.` : ''}
+         </Typography>)}
+       </details>
+       <details>
+         <summary>Respaldo original de la unificación y cambios de identificación</summary>
         <Typography component="pre" variant="caption" sx={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{JSON.stringify(history.data, null, 2)}</Typography>
       </details></>}
     </Stack></DialogContent>

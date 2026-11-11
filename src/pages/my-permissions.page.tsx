@@ -64,6 +64,6 @@ export default function MyPermissionsPage() {
       </>}
     </Stack>
     {creating && profile.data && <LeaveRequestDialog selfProfile={profile.data} onClose={() => setCreating(false)} onCreated={id => { setCreating(false); select(id) }} />}
-    {selected && <LeaveDetailDialog id={selected} onClose={() => select()} />}
+    {selected && <LeaveDetailDialog id={selected} onClose={() => select()} onCreated={select} />}
   </>
 }

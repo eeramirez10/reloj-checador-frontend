@@ -15,7 +15,8 @@ export const roleLabels: Record<AccountRole, string> = { admin: 'Administrador',
 
 export function canOpenPage(role: AccountRole, path: string): boolean {
   if (role === 'employee') return path === '/' || path.startsWith('/my/')
-  if (['/accounts', '/branches', '/devices','/companies'].includes(path)) return role === 'admin'
+  if(path==='/companies')return ['admin','hr'].includes(role)
+  if (['/accounts', '/branches', '/devices'].includes(path)) return role === 'admin'
   if (['/assignments', '/schedules', '/synchronization'].includes(path)) return role !== 'manager'
   return true
 }

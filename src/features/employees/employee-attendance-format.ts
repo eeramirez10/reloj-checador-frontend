@@ -6,6 +6,7 @@ export const attendanceStatusLabels: Record<EmployeeAttendanceStatus, string> = 
   complete: 'Completo', incomplete: 'Incompleto', in_progress: 'En curso', ambiguous: 'Por revisar', day_off: 'Descanso',
   unconfigured: 'Revisar horario', no_records: 'Sin registros', upcoming: 'Pendiente',
   authorized_absence: 'Ausencia autorizada',
+  authorized_work:'Trabajo fuera de oficina autorizado',
 }
 
 const dateFormatter = new Intl.DateTimeFormat('es-MX', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'UTC' })

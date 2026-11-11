@@ -21,12 +21,14 @@ import { createLeave, previewLeave, useLeaveProfile } from './api'
 import EmployeeSelect from './employee-select'
 import { EmployeeDialog } from '../organization/person-dialog'
 import { leaveKindLabels } from './leave-format'
-import type { LeaveInput, LeaveKind, LeavePreview } from './types'
+import type { LeaveInput, LeaveKind, LeavePreview,LeaveRequest } from './types'
 import type { PortalProfile } from '../portal/api'
 import { createRequestKey } from '../../shared/api/request-key'
 
-export default function LeaveRequestDialog({ employees = [], selfProfile, onClose, onCreated }: { employees?: Employee[]; selfProfile?: PortalProfile; onClose: () => void; onCreated: (id: string) => void }) {
-  const [value, setValue] = useState<LeaveInput>(() => ({ employeeId: selfProfile?.employeeId ?? '', kind: 'absence', from: getToday(selfProfile?.timeZone), to: getToday(selfProfile?.timeZone), authorizedTime: null, paid: true, useVacation: false, reason: '' }))
+export default function LeaveRequestDialog({ employees = [], selfProfile,initialRequest, onClose, onCreated }: { employees?: Employee[]; selfProfile?: PortalProfile;initialRequest?:LeaveRequest; onClose: () => void; onCreated: (id: string) => void }) {
+  const [value, setValue] = useState<LeaveInput>(() => initialRequest ? {employeeId:initialRequest.employeeId,kind:initialRequest.kind,from:initialRequest.from,to:initialRequest.to,authorizedTime:initialRequest.authorizedTime,
+    paid:initialRequest.paid,useVacation:initialRequest.useVacation,reason:initialRequest.reason,clientName:initialRequest.clientName??null,fullDay:initialRequest.fullDay??true,replacesRequestId:initialRequest.id}
+    : { employeeId: selfProfile?.employeeId ?? '', kind: 'absence', from: getToday(selfProfile?.timeZone), to: getToday(selfProfile?.timeZone), authorizedTime: null, paid: true, useVacation: false, reason: '',clientName:null,fullDay:true,replacesRequestId:null })
   const [sourceKey] = useState(createRequestKey)
   const [preview, setPreview] = useState<LeavePreview | null>(null)
   const [reviewing, setReviewing] = useState(false)
@@ -39,6 +41,7 @@ export default function LeaveRequestDialog({ employees = [], selfProfile, onClos
     return createLeave(value, preview.token, sourceKey,Boolean(selfProfile))
   })
   const busy = reviewing || mutation.isPending
+  const offsite=value.kind==='home_office' || value.kind==='client_visit'
   const active = employees.filter((item) => item.isActive && item.identificationStatus === 'confirmed')
   function update(changes: Partial<LeaveInput>) { setValue((current) => ({ ...current, ...changes })); setPreview(null); setError('') }
   async function submit() {
@@ -55,11 +58,12 @@ export default function LeaveRequestDialog({ employees = [], selfProfile, onClos
   return <>
     <Dialog fullWidth maxWidth="md" open onClose={busy ? undefined : onClose}>
       <Box component="form" onSubmit={(event) => { event.preventDefault(); void submit() }} sx={{ display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
-        <DialogTitle>Nueva solicitud de permiso</DialogTitle>
+        <DialogTitle>{initialRequest?'Corregir solicitud cancelada':'Nueva solicitud de permiso'}</DialogTitle>
         <DialogContent dividers><Stack spacing={2.5}>
           {error && <Alert severity="error">{error}</Alert>}
+          {initialRequest && <Alert severity="info">Revisa y corrige las fechas. Se creará otra solicitud pendiente de aprobación, conservando el historial de la cancelada.</Alert>}
           {selfProfile ? <Box><Typography variant="h3">{selfProfile.name}</Typography><Typography variant="body2">Jefe directo: {selfProfile.managerName ?? 'Sin asignar'}. Vacaciones disponibles: {selfProfile.vacationBalance} días.</Typography></Box>
-            : <EmployeeSelect employees={active} required value={value.employeeId} onChange={(employeeId) => update({ employeeId })} disabled={busy} />}
+            : <EmployeeSelect employees={active} required value={value.employeeId} onChange={(employeeId) => update({ employeeId })} disabled={busy || Boolean(initialRequest)} />}
           {employee && <Box sx={{ p: 2, bgcolor: 'background.default', borderLeft: 3, borderColor: 'primary.main' }}><Stack spacing={0.75}>
             <Typography variant="body2">{employee.branchName || 'Sin sucursal'}</Typography>
             {profile.isError ? <Alert severity="error">{getApiErrorMessage(profile.error)} <Button onClick={() => void profile.refetch()}>Reintentar</Button></Alert>
@@ -69,19 +73,24 @@ export default function LeaveRequestDialog({ employees = [], selfProfile, onClos
           </Stack></Box>}
           <TextField required select label="Tipo de permiso" value={value.kind} disabled={busy} onChange={(event) => {
             const kind = event.target.value as LeaveKind
-            update({ kind, authorizedTime: kind === 'absence' ? null : '', useVacation: false })
+            update({ kind, authorizedTime:null, useVacation: false,clientName:null,fullDay:true,...(['home_office','client_visit'].includes(kind)?{paid:true}:{}) })
           }}>{Object.entries(leaveKindLabels).map(([key, label]) => <MenuItem key={key} value={key}>{label}</MenuItem>)}</TextField>
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
             <TextField required type="date" label="Desde" value={value.from} disabled={busy} onChange={(event) => update({ from: event.target.value })} slotProps={{ inputLabel: { shrink: true } }} />
             <TextField required type="date" label="Hasta" value={value.to} disabled={busy} onChange={(event) => update({ to: event.target.value })} slotProps={{ inputLabel: { shrink: true }, htmlInput: { min: value.from } }} />
           </Box>
-          {value.kind !== 'absence' && <TextField required type="time" label={value.kind === 'late_arrival' ? 'Hora autorizada de entrada' : 'Hora autorizada de salida'}
-            value={value.authorizedTime ?? ''} disabled={busy} onChange={(event) => update({ authorizedTime: event.target.value })}
-            slotProps={{ inputLabel: { shrink: true }, htmlInput: { step: 60 } }} helperText="Se aplica a cada día laborable del rango, en la hora local de su sucursal." />}
+          {['late_arrival','early_exit'].includes(value.kind) && <TextField type="time" label={value.kind === 'late_arrival' ? 'Hora autorizada de entrada (opcional)' : 'Hora autorizada de salida (opcional)'}
+            value={value.authorizedTime ?? ''} disabled={busy} onChange={(event) => update({ authorizedTime: event.target.value || null })}
+            slotProps={{ inputLabel: { shrink: true }, htmlInput: { step: 60 } }} helperText="Vacío: permiso sin hora definida. Con hora: se evalúa el exceso fuera del límite autorizado." />}
+          {value.kind==='client_visit' && <><TextField label="Nombre del cliente" value={value.clientName??''} disabled={busy} onChange={event=>update({clientName:event.target.value || null})} slotProps={{htmlInput:{maxLength:200}}} />
+            <TextField select label="Modalidad de visita" value={value.fullDay===false?'open':'full'} disabled={busy} onChange={event=>update({fullDay:event.target.value==='full'})}>
+              <MenuItem value="full">Día completo</MenuItem><MenuItem value="open">Visita abierta, sin horario fijo</MenuItem>
+            </TextField></>}
+          {offsite && <Alert severity="info">Trabajo autorizado fuera de oficina, sin consumo de vacaciones. Las checadas reales se conservarán; esta autorización no genera horas trabajadas ni horas extras.</Alert>}
           <Stack spacing={1}>
             {value.kind === 'absence' && <FormControlLabel label="Tomar días de vacaciones" control={<Switch checked={value.useVacation} disabled={busy}
               onChange={(_, checked) => update({ useVacation: checked, ...(checked ? { paid: true } : {}) })} />} />}
-            <TextField select label="Goce de sueldo" value={value.paid ? 'paid' : 'unpaid'} disabled={busy || value.useVacation}
+            <TextField select label="Goce de sueldo" value={value.paid ? 'paid' : 'unpaid'} disabled={busy || value.useVacation || offsite}
               helperText={value.useVacation ? 'Los permisos a cuenta de vacaciones siempre son con goce de sueldo.' : undefined}
               onChange={(event) => update({ paid: event.target.value === 'paid' })}><MenuItem value="paid">Con goce de sueldo</MenuItem><MenuItem value="unpaid">Sin goce de sueldo</MenuItem></TextField>
           </Stack>

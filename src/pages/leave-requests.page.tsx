@@ -103,7 +103,7 @@ export default function LeaveRequestsPage() {
       </>}
     </Stack>
     {creating && <LeaveRequestDialog employees={people} onClose={() => setCreating(false)} onCreated={(id) => { setCreating(false); setSelected(id) }} />}
-    {selected && <LeaveDetailDialog id={selected} onClose={() => setSelected(null)} />}
+    {selected && <LeaveDetailDialog id={selected} onClose={() => setSelected(null)} onCreated={setSelected} />}
   </>
 }
 

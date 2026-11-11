@@ -43,6 +43,7 @@ import PageHeader from '../shared/ui/page-header'
 import PageLoading from '../shared/ui/page-loading'
 import { usePermissions } from '../features/auth/auth-context'
 import CompanySelect from '../features/companies/company-select'
+import EmployeeDiscardDialog from '../features/employees/employee-discard-dialog'
 
 const pageSize = 25
 type EmploymentStatusFilter = 'active' | 'inactive' | 'all'
@@ -75,7 +76,9 @@ export default function EmployeesPage() {
   const [search, setSearch] = useState('')
   const [branchId, setBranchId] = useState('')
   const [companyId,setCompanyId] = useState('')
-  const employees = useEmployees({ limit: 500,branchId: branchId || undefined,companyId: companyId || undefined })
+  const [sortBy,setSortBy]=useState<'name'|'branch'|'company'>('name')
+  const [sortOrder,setSortOrder]=useState<'asc'|'desc'>('asc')
+  const employees = useEmployees({ limit: 500,branchId: branchId || undefined,companyId: companyId || undefined,sortBy,sortOrder })
   const [deviceId, setDeviceId] = useState('')
   const [statusFilter, setStatusFilter] = useState<EmploymentStatusFilter>('active')
   const [page, setPage] = useState(1)
@@ -84,6 +87,7 @@ export default function EmployeesPage() {
   const [identifying, setIdentifying] = useState<Employee | null>(null)
   const [clockEmployee, setClockEmployee] = useState<Employee | null>(null)
   const [history, setHistory] = useState<Employee | null>(null)
+  const [discarding,setDiscarding] = useState<Employee | null>(null)
   const [assignIds, setAssignIds] = useState<string[] | null>(null)
   const [photo, setPhoto] = useState<UserPhotoReference | null>(null)
   const [notice, setNotice] = useState<{ severity: 'success' | 'error'; message: string } | null>(null)
@@ -118,7 +122,7 @@ export default function EmployeesPage() {
     const scheduleLabel = hours ? `${employee.scheduling?.workHours ? 'Individual' : role?.name ?? 'Jornada'} · ${hours.entryTime}–${hours.exitTime}` : 'Sin horario'
     return { employee, clock, photoUser, scheduleLabel }
   })
-  const actions: EmployeeActions = { edit: setEditing, identify: setIdentifying, clock: setClockEmployee, assign: (employee) => setAssignIds([employee.id]), history: setHistory }
+  const actions: EmployeeActions = { edit: setEditing, identify: setIdentifying, clock: setClockEmployee, assign: (employee) => setAssignIds([employee.id]), history: setHistory,discard:setDiscarding }
   const selectedEmployees = data.filter((employee) => selected.has(employee.id))
   const selectedPhotoRecords = selectedEmployees.map((employee) => employee.clockRecords.find((record) => record.bindingStatus === 'active' && record.deviceId === syncDeviceId))
   const canSyncPhotos = Boolean(canManagePersonnel && syncDeviceId && selected.size > 0 && selected.size <= 25 && selectedPhotoRecords.length === selected.size && selectedPhotoRecords.every(Boolean))
@@ -166,6 +170,10 @@ export default function EmployeesPage() {
           <MenuItem value="active">Activos</MenuItem><MenuItem value="inactive">Inactivos</MenuItem><MenuItem value="all">Todos los estados</MenuItem>
         </TextField>
       </Stack>
+        <Stack direction={{xs:'column',sm:'row'}} spacing={2} sx={{mt:2}}>
+          <TextField select size="small" label="Ordenar por" value={sortBy} disabled={photos.isPending} sx={{minWidth:200}} onChange={event=>{setSortBy(event.target.value as typeof sortBy);resetSelection()}}><MenuItem value="name">Nombre</MenuItem><MenuItem value="branch">Sucursal</MenuItem><MenuItem value="company">Empresa</MenuItem></TextField>
+          <TextField select size="small" label="Orden" value={sortOrder} disabled={photos.isPending} sx={{minWidth:200}} onChange={event=>{setSortOrder(event.target.value as typeof sortOrder);resetSelection()}}><MenuItem value="asc">Ascendente</MenuItem><MenuItem value="desc">Descendente</MenuItem></TextField>
+        </Stack>
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ mt: 2 }}>
           {canManagePersonnel && <Button disabled={!syncDeviceId || employeeSync.isPending || photos.isPending} startIcon={<SyncAltRoundedIcon />} onClick={() => void syncEmployees()}>{employeeSync.isPending ? 'Sincronizando…' : 'Sincronizar empleados del reloj'}</Button>}
           <Typography variant="caption" color="text.secondary" sx={{ alignSelf: 'center' }}>Selecciona una sucursal con un solo reloj o el reloj que deseas consultar.</Typography>
@@ -227,6 +235,7 @@ export default function EmployeesPage() {
     {identifying && <EmployeeIdentificationDialog employee={identifying} employees={data} onClose={() => setIdentifying(null)} />}
     {clockEmployee && <EmployeeClockDialog employee={clockEmployee} employees={data} onClose={() => setClockEmployee(null)} />}
     {history && <EmployeeHistoryDialog employee={history} onClose={() => setHistory(null)} />}
+    {discarding && <EmployeeDiscardDialog employee={discarding} onClose={() => setDiscarding(null)} onDiscarded={() => {resetSelection();setNotice({severity:'success',message:'Registro pendiente eliminado de la lista.'})}} />}
     {assignIds && <AssignmentDialog title="Asignar sucursal y horario" targets={{ employeeIds: assignIds }} onClose={() => { setAssignIds(null); setSelected(new Set()) }} />}
     <UserPhotoDialog key={photo ? `${photo.deviceId}:${photo.userId}` : 'closed'} user={photo} onClose={() => setPhoto(null)} />
     <Snackbar open={Boolean(notice)} autoHideDuration={6000} onClose={() => setNotice(null)}>{notice ? <Alert severity={notice.severity} onClose={() => setNotice(null)}>{notice.message}</Alert> : <span />}</Snackbar>

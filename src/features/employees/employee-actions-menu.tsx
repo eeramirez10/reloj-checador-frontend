@@ -5,6 +5,7 @@ import MoreHorizRoundedIcon from '@mui/icons-material/MoreHorizRounded'
 import PersonSearchOutlinedIcon from '@mui/icons-material/PersonSearchOutlined'
 import ScheduleRoundedIcon from '@mui/icons-material/ScheduleRounded'
 import SwapHorizRoundedIcon from '@mui/icons-material/SwapHorizRounded'
+import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded'
 import Button from '@mui/material/Button'
 import Divider from '@mui/material/Divider'
 import ListItemIcon from '@mui/material/ListItemIcon'
@@ -15,7 +16,7 @@ import { Link as RouterLink } from 'react-router-dom'
 import type { Employee } from './types/employee'
 import { usePermissions } from '../auth/auth-context'
 
-export type EmployeeActions = Record<'edit' | 'identify' | 'clock' | 'assign' | 'history', (employee: Employee) => void>
+export type EmployeeActions = Record<'edit' | 'identify' | 'clock' | 'assign' | 'history' | 'discard', (employee: Employee) => void>
 
 export default function EmployeeActionsMenu({ employee, actions }: { employee: Employee; actions: EmployeeActions }) {
   const { canManagePersonnel } = usePermissions()
@@ -38,7 +39,11 @@ export default function EmployeeActionsMenu({ employee, actions }: { employee: E
       {employee.identificationStatus === 'pending' && <MenuItem onClick={() => select('identify')}><ListItemIcon><PersonSearchOutlinedIcon fontSize="small" /></ListItemIcon>Identificar</MenuItem>}
       {employee.identificationStatus === 'confirmed' && <MenuItem onClick={() => select('clock')}><ListItemIcon><ScheduleRoundedIcon fontSize="small" /></ListItemIcon>Reloj</MenuItem>}
       <MenuItem onClick={() => select('assign')}><ListItemIcon><SwapHorizRoundedIcon fontSize="small" /></ListItemIcon>Asignar</MenuItem>
-      <MenuItem onClick={() => select('history')}><ListItemIcon><HistoryRoundedIcon fontSize="small" /></ListItemIcon>Historial</MenuItem>
+       <MenuItem onClick={() => select('history')}><ListItemIcon><HistoryRoundedIcon fontSize="small" /></ListItemIcon>Historial</MenuItem>
+       {employee.identificationStatus==='pending' && <MenuItem disabled={employee.hasAttendance!==false} onClick={() => select('discard')} sx={{color:'error.main'}}
+         title={employee.hasAttendance ? 'Este registro ya tiene checadas y no puede eliminarse.' : undefined}>
+         <ListItemIcon><DeleteOutlineRoundedIcon fontSize="small" color="error" /></ListItemIcon>Eliminar de la lista
+       </MenuItem>}
       </>}
     </Menu>
   </>

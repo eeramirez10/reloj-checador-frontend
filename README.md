@@ -6,9 +6,17 @@ Interfaz de administración de relojes ZKTeco, usuarios y asistencias. Está con
 
 El administrador gestiona **Administración → Empresas** con nombre, código interno opcional, estado y observaciones. RH/admin asignan una empresa por empleado desde **Datos generales** al crear o editar su ficha. Las empresas inactivas conservan sus vínculos y se pueden consultar, pero no admiten nuevas asignaciones.
 
+RH/admin también pueden abrir **Empresas → Asignar empleados**, filtrar por sucursal/empresa actual/Sin empresa y buscar por nombre o ID del reloj. El diálogo permite multiselección entre páginas, muestra la empresa actual y ordena por nombre, sucursal o empresa en ambos sentidos. Guardar cambia únicamente los seleccionados, incluso desde otra empresa, y rechaza todo el lote si detecta cambios concurrentes. Solo admin puede crear/editar el catálogo. El directorio Empleados incluye el mismo ordenamiento.
+
 **Empleados**, **Asistencia diaria**, **Tarjetas de asistencia** y **Horas extras** combinan Sucursal con Empresa: Todas las empresas, una empresa concreta o Sin empresa. Se utiliza la empresa actual del expediente. Tarjetas, reportes y PDF muestran la empresa; las exportaciones incluyen todos los empleados coincidentes y mantienen los totales del filtro.
 
 **Mi perfil** muestra la empresa del empleado como dato de consulta. Las instrucciones de migración y publicación Windows están en `backend/docs/companies.md`.
+
+## Limpieza de registros pendientes
+
+En **Pendientes de identificar → Opciones → Eliminar de la lista**, RH/admin pueden quitar fichas pendientes sin checadas registradas. Se pide confirmación y el servidor valida todos sus vínculos e historial. El usuario permanece en el reloj; sincronizar sus datos no lo hace reaparecer. Una checada real posterior, nativa o de archivo, recupera automáticamente la misma ficha como pendiente. El historial del empleado muestra el descarte y la recuperación. Las fichas con checadas tienen la acción deshabilitada.
+
+La guía técnica y de publicación está en `backend/docs/pending-cleanup-attendance-search.md`.
 
 ## Fecha y hora de dispositivos
 
@@ -118,7 +126,7 @@ La tarjeta muestra los datos del empleado y todos los días del rango con jornad
 
 ## Tarjetas de asistencia por sucursal
 
-En **Asistencia → Tarjetas de asistencia** (`/attendance-cards`) se consulta el reporte conjunto. Sucursal, Estado del empleado (Activos/Inactivos), Desde y Hasta comienzan vacíos. **Consultar** permanece deshabilitado hasta completar los filtros con un periodo válido de hasta 366 días. El reporte se carga únicamente al pulsar Consultar; cambiar un filtro limpia el resultado y cancela la consulta pendiente. Volver a consultar actualiza el reporte, incluso con la misma selección.
+En **Asistencia → Tarjetas de asistencia** (`/attendance-cards`) se consulta el reporte conjunto. Estado del empleado inicia en **Activos** y permite cambiar a Inactivos; Sucursal, Desde y Hasta comienzan vacíos. **Buscar empleado** encuentra por nombre/apellidos o ID del reloj, combinado con empresa y demás filtros. Vacío consulta a todos. La búsqueda se aplica en el servidor antes de paginar y el PDF exporta los mismos resultados. **Consultar** permanece deshabilitado hasta completar los filtros con un periodo válido de hasta 366 días. El reporte se carga al pulsar Consultar o Enter; cambiar un filtro limpia el resultado y la exportación anteriores. Volver a consultar actualiza el reporte, incluso con la misma selección.
 
 La selección utiliza la sucursal y el estado actuales de la ficha. Cada tarjeta conserva el historial de jornadas de sus fechas y utiliza el mismo formato y cálculo individual. Se incluyen empleados sin registros. El resultado muestra cinco tarjetas por página y permite recorrer todos los empleados coincidentes; cada cambio de página solicita un nuevo lote. Si no hay empleados, se muestra **No hay empleados para los filtros seleccionados**. Al recargar la página vuelve al estado inicial vacío.
 
@@ -150,13 +158,17 @@ Al terminar, **Ver PDF** abre el documento para imprimirlo con el visor del nave
 
 En **Empleados → Opciones → Editar → Permisos y vacaciones**, configura el jefe directo, WhatsApp internacional del empleado y saldo manual de vacaciones. El número del jefe se captura en su propia ficha. Modificar el saldo exige un motivo y genera un movimiento con su saldo resultante. El historial incluye cargas, consumos y devoluciones. El botón **Configurar jefe y vacaciones** de una solicitud abre el mismo editor directamente en esta pestaña.
 
-En **Asistencia → Permisos** (`/leave-requests`), **Nueva solicitud** permite elegir empleado, tipo (**Faltar / Llegar tarde / Salir temprano**), fechas Desde/Hasta, goce de sueldo y motivo. Para llegar tarde/salir temprano se requiere una hora autorizada, aplicada a los días laborables del rango en la hora local correspondiente. **Tomar días de vacaciones** solo está disponible para faltar y activa con goce de sueldo.
+En **Asistencia → Permisos** (`/leave-requests`), **Nueva solicitud** permite elegir empleado, tipo (**Faltar / Llegar tarde / Salir temprano / Home office / Visita a cliente**), fechas Desde/Hasta y motivo. Para llegar tarde/salir temprano la hora autorizada es opcional, aplicada a los días laborables del rango en la hora local correspondiente. **Tomar días de vacaciones** solo está disponible para faltar y activa con goce de sueldo.
+
+**Home office** cubre días completos. **Visita a cliente** permite nombre del cliente y modalidad día completo o visita abierta sin horario; no pide entrada, salida ni regreso. Ambos son con goce, sin vacaciones. El cliente aparece en detalle, observaciones de tarjetas y PDF.
 
 **Revisar solicitud** muestra el jefe, fechas laborables incluidas y días de vacaciones que se descontarían al aprobar. **Solicitar permiso** la registra como pendiente. El listado ofrece filtros por fechas, sucursal, empleado, jefe, tipo y estado, con paginación, tabla en escritorio y tarjetas en móvil. Las fechas filtran el periodo solicitado, no la fecha de captura.
 
-**Ver solicitud** muestra motivo, fechas incluidas, jefe responsable e historial. **Aprobar / Rechazar** registra la resolución desde la página a nombre del jefe; **Cancelar permiso** permite indicar al empleado o jefe como solicitante de cancelación. Los rechazos y cancelaciones exigen motivo. El saldo se valida y descuenta al aprobar; cancelar un aprobado devuelve los días consumidos. Un conflicto de saldo, horario o versión se muestra para actualizar la revisión. Los permisos con intervalos superpuestos se rechazan.
+**Ver solicitud** muestra motivo, fechas incluidas, jefe responsable e historial. **Aprobar / Rechazar** solo está disponible para el jefe asignado con cuenta de empleado/encargado vinculada; RH/admin no pueden aprobar ni rechazar. El solicitante puede retirar su pendiente. RH/admin pueden cancelar pendientes o aprobados dentro de su alcance, con motivo obligatorio. Cancelar conserva la aprobación e historial, devuelve las vacaciones consumidas y recalcula incidencias/descuentos en una sola transacción. El evento muestra cuenta, rol y estado anterior.
 
-La justificación aparece automáticamente en **Asistencia diaria**, tarjetas individuales/de sucursal y su PDF. Los días sin checadas se identifican como **Ausencia autorizada**, con goce, uso de vacaciones y motivo. Los permisos parciales justifican solo el intervalo aprobado; el exceso conserva sus incidencias. Las horas trabajadas se calculan exclusivamente a partir de registros reales y las extras conservan su jornada base.
+En una cancelada, **Crear solicitud corregida** permite al solicitante o RH/admin autorizado precargar y modificar los datos, revisar y enviar otra solicitud pendiente vinculada a la anterior. Requiere nueva aprobación. Los conflictos de saldo, horario o versión se muestran para actualizar la revisión; se rechazan solapamientos incompatibles.
+
+La justificación aparece automáticamente en **Asistencia diaria**, tarjetas individuales/de sucursal y su PDF. Faltar se identifica como **Ausencia autorizada**. Home office y visitas se muestran como **Trabajo autorizado**, conservando checadas reales y eliminando incidencias de presencia correspondientes, sin inventar horas trabajadas ni extras. Los permisos parciales con hora justifican su intervalo y mantienen el exceso; sin hora justifican ese movimiento, no una ausencia completa. La guía técnica y de publicación está en `backend/docs/offsite-leave.md`.
 
 El historial indica **WhatsApp pendiente de conectar** y conserva el destinatario previsto. La recepción de solicitudes y el envío real por Twilio se integrarán después.
 

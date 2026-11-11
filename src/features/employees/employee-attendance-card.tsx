@@ -19,7 +19,7 @@ import { attendanceObservations, attendanceStatusLabels, formatCardDate, formatC
 import EmployeeAttendanceDayDialog from './employee-attendance-day-dialog'
 
 function DayStatus({ day }: { day: EmployeeAttendanceDay }) {
-  const color = day.status === 'complete' ? 'success' : day.status === 'authorized_absence' ? 'info' : ['incomplete','ambiguous','unconfigured','no_records'].includes(day.status) ? 'warning' : 'default'
+  const color = day.status === 'complete' ? 'success' : ['authorized_absence','authorized_work'].includes(day.status) ? 'info' : ['incomplete','ambiguous','unconfigured','no_records'].includes(day.status) ? 'warning' : 'default'
   return <Chip size="small" variant="outlined" color={color} label={attendanceStatusLabels[day.status]} />
 }
 
@@ -91,7 +91,7 @@ export default function EmployeeAttendanceCard({ card }: { card: AttendanceCard 
         {statistics.map(([label,value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}
       </Box>
       <Typography component="p" variant="caption" color="text.secondary" sx={{ px: { xs: 2, sm: 3 }, mt: 0, mb: 2 }}>
-        {summary.daysOff} días de descanso. {summary.authorizedAbsenceDays ? `${summary.authorizedAbsenceDays} días de ausencia autorizada. ` : ''}Las horas corresponden solo a jornadas con tiempo calculable. Los movimientos y el horario se muestran en la zona local de cada sucursal.
+        {summary.daysOff} días de descanso. {summary.authorizedAbsenceDays ? `${summary.authorizedAbsenceDays} días de ausencia autorizada. ` : ''}{summary.authorizedWorkDays?`${summary.authorizedWorkDays} días de trabajo fuera de oficina autorizado. `:''}Las horas corresponden solo a jornadas con tiempo calculable. Los movimientos y el horario se muestran en la zona local de cada sucursal.
       </Typography>
     </Paper>
     {detail && <EmployeeAttendanceDayDialog day={detail} onClose={() => setDetail(null)} />}

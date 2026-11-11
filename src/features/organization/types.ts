@@ -104,7 +104,7 @@ export interface DailyAttendance {
     branchName?: string
     scheduleName?: string
     timeZone: string
-    status: 'complete' | 'incomplete' | 'in_progress' | 'ambiguous' | 'day_off' | 'unconfigured' | 'authorized_absence'
+    status: 'complete' | 'incomplete' | 'in_progress' | 'ambiguous' | 'day_off' | 'unconfigured' | 'authorized_absence' | 'authorized_work'
     leaveAuthorizations?: LeaveAuthorization[]
     entry?: string
     mealDeparture?: string

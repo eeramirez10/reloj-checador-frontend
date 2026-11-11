@@ -30,6 +30,7 @@ export interface EmployeeAttendanceDay {
   routes?: RouteDaySegment[]
 }
 export interface EmployeeAttendanceSummary {
+  authorizedWorkDays?:number
   authorizedAbsenceDays?: number
   recordedDays: number
   completeDays: number

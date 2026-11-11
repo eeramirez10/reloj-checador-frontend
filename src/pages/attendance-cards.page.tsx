@@ -20,16 +20,16 @@ import AttendancePdfActions from '../features/attendance/pdf/attendance-pdf-acti
 import { useAttendancePdfExport } from '../features/attendance/pdf/use-attendance-pdf-export'
 import CompanySelect from '../features/companies/company-select'
 
-type FilterDraft = Omit<BranchAttendanceFilters, 'employeeStatus'> & { employeeStatus: BranchAttendanceFilters['employeeStatus'] | '' }
+type FilterDraft = BranchAttendanceFilters
 
 export default function AttendanceCardsPage() {
   const branches = useBranches()
-  const [filters, setFilters] = useState<FilterDraft>({ branchId: '', employeeStatus: '', from: '', to: '' })
+  const [filters, setFilters] = useState<FilterDraft>({ branchId: '', employeeStatus: 'active', from: '', to: '',search:'' })
   const [request, setRequest] = useState<BranchAttendanceRequest | null>(null)
   const sequence = useRef(0)
   const results = useRef<HTMLDivElement>(null)
   const report = useBranchAttendanceCards(request)
-  const pdf = useAttendancePdfExport(request ? `${request.branchId}:${request.companyId ?? 'all'}:${request.employeeStatus}:${request.from}:${request.to}` : 'empty')
+  const pdf = useAttendancePdfExport(request ? `${request.branchId}:${request.companyId ?? 'all'}:${request.employeeStatus}:${request.from}:${request.to}:${request.search ?? ''}` : 'empty')
   const dateError = filters.from && filters.to ? validateAttendancePeriod(filters) : null
   const ready = Boolean(filters.branchId && filters.employeeStatus && filters.from && filters.to && !dateError)
 
@@ -40,7 +40,7 @@ export default function AttendanceCardsPage() {
   }
   function consult(page = 1) {
     if (!ready || !filters.employeeStatus || pdf.busy) return
-    setRequest({ branchId: filters.branchId,companyId: filters.companyId || undefined, employeeStatus: filters.employeeStatus, from: filters.from, to: filters.to,
+    setRequest({ branchId: filters.branchId,companyId: filters.companyId || undefined,search:filters.search?.trim() || undefined, employeeStatus: filters.employeeStatus, from: filters.from, to: filters.to,
       page, sequence: ++sequence.current })
   }
   function changePage(page: number) {
@@ -57,8 +57,8 @@ export default function AttendanceCardsPage() {
       ])
       const status = source.employeeStatus === 'active' ? 'Activos' : 'Inactivos'
       return module.exportAttendancePdf({ cards: source.cards, generatedAt: source.generatedAt, timeZone: source.branch.timeZone,
-        scopeLabel: `${source.branch.name} · ${source.companyFilter?.name ?? 'Todas las empresas'} · ${status} · ${source.totalEmployees} empleados` },
-      module.attendancePdfFilename(`${source.branch.name}-${source.companyFilter?.name ?? 'todas-empresas'}-${status}`,source.period.from,source.period.to),options)
+        scopeLabel: `${source.branch.name} · ${source.companyFilter?.name ?? 'Todas las empresas'} · ${status} · ${source.totalEmployees} empleados${source.search ? ` · Búsqueda: ${source.search}` : ''}` },
+      module.attendancePdfFilename(`${source.branch.name}-${source.companyFilter?.name ?? 'todas-empresas'}-${status}${source.search ? `-${source.search}` : ''}`,source.period.from,source.period.to),options)
     })
   }
 
@@ -72,26 +72,28 @@ export default function AttendanceCardsPage() {
         pdf.cancel()
         consult()
       }}>
-        <Box sx={{ display: 'grid', gap: 2, alignItems: 'start', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', lg: '1.2fr 1.2fr 1fr 1fr 1fr auto' } }}>
-          <TextField fullWidth required select size="small" label="Sucursal" value={filters.branchId} disabled={branches.isPending}
+        <Box sx={{ display: 'grid', gap: 2, alignItems: 'start', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', lg: 'repeat(6,minmax(0,1fr))' } }}>
+          <TextField fullWidth required select size="small" label="Sucursal" value={filters.branchId} disabled={branches.isPending} sx={{gridColumn:{lg:'span 2'}}}
             onChange={(event) => update('branchId', event.target.value)} slotProps={{ select: { displayEmpty: true }, inputLabel: { shrink: true } }}>
             <MenuItem value="" disabled>Selecciona sucursal</MenuItem>
             {(branches.data ?? []).map((branch) => <MenuItem key={branch.id} value={branch.id}>{branch.name}</MenuItem>)}
           </TextField>
-          <CompanySelect value={filters.companyId ?? ''} onChange={value => update('companyId',value)} />
-          <TextField fullWidth required select size="small" label="Estado del empleado" value={filters.employeeStatus}
+          <Box sx={{gridColumn:{lg:'span 2'}}}><CompanySelect value={filters.companyId ?? ''} onChange={value => update('companyId',value)} /></Box>
+          <TextField fullWidth required select size="small" label="Estado del empleado" value={filters.employeeStatus} sx={{gridColumn:{lg:'span 2'}}}
             onChange={(event) => update('employeeStatus', event.target.value as FilterDraft['employeeStatus'])} slotProps={{ select: { displayEmpty: true }, inputLabel: { shrink: true } }}>
-            <MenuItem value="" disabled>Selecciona estado</MenuItem><MenuItem value="active">Activos</MenuItem><MenuItem value="inactive">Inactivos</MenuItem>
+            <MenuItem value="active">Activos</MenuItem><MenuItem value="inactive">Inactivos</MenuItem>
           </TextField>
           <TextField fullWidth required size="small" type="date" label="Desde" value={filters.from} onChange={(event) => update('from', event.target.value)} slotProps={{ inputLabel: { shrink: true } }} />
           <TextField fullWidth required size="small" type="date" label="Hasta" value={filters.to} onChange={(event) => update('to', event.target.value)} slotProps={{ inputLabel: { shrink: true } }} />
+          <TextField fullWidth size="small" label="Buscar empleado" value={filters.search ?? ''} onChange={event => update('search',event.target.value)}
+            placeholder="Nombre, apellidos o ID del reloj" helperText="Vacío para consultar a todos." slotProps={{htmlInput:{maxLength:120}}} sx={{gridColumn:{lg:'span 3'}}} />
           <Button type="submit" variant="contained" disabled={!ready || report.isFetching || pdf.busy}>{report.isFetching ? 'Consultando…' : 'Consultar'}</Button>
         </Box>
         {dateError && <Alert severity="error" sx={{ mt: 2 }}>{dateError}</Alert>}
       </Paper>
       {!request && <Paper variant="outlined" sx={{ p: { xs: 3, sm: 4 } }}>
         <Typography component="h2" variant="h3" sx={{ mb: 1 }}>Selecciona los filtros para consultar</Typography>
-        <Typography variant="body2" color="text.secondary">Elige sucursal, estado del empleado y fechas Desde / Hasta. Las tarjetas aparecerán al pulsar Consultar.</Typography>
+        <Typography variant="body2" color="text.secondary">Elige sucursal y fechas Desde / Hasta. El estado inicia en Activos. Puedes buscar un empleado por nombre o ID del reloj antes de pulsar Consultar.</Typography>
       </Paper>}
       {request && <Box ref={results} sx={{ scrollMarginTop: '84px' }}>
         {report.isFetching ? <PageLoading /> : report.isError ? <Alert severity="error">{getApiErrorMessage(report.error)}</Alert> : report.data && <Stack spacing={3}>
@@ -100,6 +102,7 @@ export default function AttendanceCardsPage() {
               <Stack spacing={0.5}>
                 <Typography component="h2" variant="h3">{report.data.branch.name} · {report.data.totalEmployees} empleados {report.data.employeeStatus === 'active' ? 'activos' : 'inactivos'}</Typography>
                 <Typography variant="body2">Empresa: {report.data.companyFilter?.name ?? 'Todas las empresas'}</Typography>
+                {report.data.search && <Typography variant="body2">Búsqueda: {report.data.search}</Typography>}
                 <Typography variant="body2" color="text.secondary">Del {formatCardDate(report.data.period.from)} al {formatCardDate(report.data.period.to)} · Página {report.data.page} de {report.data.totalPages}</Typography>
               </Stack>
               <AttendancePdfActions pdf={pdf} disabled={report.isFetching} onExport={exportPdf} title="Exporta todos los empleados de los filtros consultados, incluidas las demás páginas." />

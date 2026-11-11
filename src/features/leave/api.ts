@@ -8,7 +8,7 @@ export function useLeaveRequests(filters: LeaveFilters) {
 }
 export function useLeaveDetail(id: string) {
   return useQuery({ queryKey: ['leave-request', id], queryFn: async ({ signal }) =>
-    (await httpClient.get<{ request: LeaveRequest; events: LeaveEvent[]; capabilities: { canApprove: boolean; canReject: boolean; canCancel: boolean } }>(`/leave-requests/${id}`, { signal })).data })
+    (await httpClient.get<{ request: LeaveRequest; events: LeaveEvent[]; capabilities: { canApprove: boolean; canReject: boolean; canCancel: boolean;canCorrect:boolean } }>(`/leave-requests/${id}`, { signal })).data })
 }
 export function useLeaveProfile(id?: string) {
   return useQuery({ queryKey: ['leave-profile', id], enabled: Boolean(id), queryFn: async ({ signal }) =>

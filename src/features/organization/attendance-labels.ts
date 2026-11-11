@@ -8,6 +8,7 @@ export const movementLabels: Record<Movement, string> = {
 export const dailyStatusLabels: Record<DailyAttendance['result']['status'], string> = {
   complete: 'Completo', incomplete: 'Incompleto', in_progress: 'En curso', ambiguous: 'Por identificar',
   day_off: 'Día no laboral', unconfigured: 'Sin configuración', authorized_absence: 'Ausencia autorizada',
+  authorized_work:'Trabajo fuera de oficina autorizado',
 }
 export function formatAttendanceTime(value: string | undefined, timeZone: string): string {
   if (!value) return '—'

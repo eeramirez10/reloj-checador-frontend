@@ -18,6 +18,7 @@ export interface EmployeeClockRecord {
 }
 
 export interface Employee {
+  hasAttendance?: boolean
   companyId?: string | null
   companyName?: string | null
   id: string
@@ -51,6 +52,8 @@ export interface Employee {
 }
 
 export interface EmployeeFilters {
+  sortBy?:'name'|'branch'|'company'
+  sortOrder?:'asc'|'desc'
   branchId?: string
   companyId?: string
   search?: string

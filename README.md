@@ -12,6 +12,14 @@ RH/admin también pueden abrir **Empresas → Asignar empleados**, filtrar por s
 
 **Mi perfil** muestra la empresa del empleado como dato de consulta. Las instrucciones de migración y publicación Windows están en `backend/docs/companies.md`.
 
+## Recuperar checadas de ayer y hoy
+
+Después de recuperar la conectividad del servidor, RH/admin pueden abrir **Asistencia → Checadas → Recuperar ayer y hoy**, también disponible en **Sincronización**. Se precargan los filtros de sucursal/reloj de Checadas; puede consultarse uno o todos los relojes autorizados, secuencialmente, con progreso y resultados persistentes hasta cerrar el diálogo. **Reintentar pendientes** conserva los éxitos y vuelve a intentar los fallidos.
+
+Se lee toda la información disponible en cada reloj, también la anterior a ayer; únicamente se guardan eventos nuevos y se recalcula asistencia, tarjetas y extras. Los conteos son de la descarga completa, con fechas de referencia en la zona de cada reloj. Una lectura vacía se distingue de una recuperación con registros. Repetir no duplica ni elimina el histórico.
+
+**Actualizar** consulta la base; **Recuperar ayer y hoy** se conecta al reloj. Sincronización muestra ahora el historial real con tipo, estado, conteos y errores, incluidos avances parciales. No hay reintentos automáticos; ante un timeout, consultar ese historial antes de repetir. La guía está en `backend/docs/attendance-recovery.md`.
+
 ## Limpieza de registros pendientes
 
 En **Pendientes de identificar → Opciones → Eliminar de la lista**, RH/admin pueden quitar fichas pendientes sin checadas registradas. Se pide confirmación y el servidor valida todos sus vínculos e historial. El usuario permanece en el reloj; sincronizar sus datos no lo hace reaparecer. Una checada real posterior, nativa o de archivo, recupera automáticamente la misma ficha como pendiente. El historial del empleado muestra el descarte y la recuperación. Las fichas con checadas tienen la acción deshabilitada.

@@ -37,6 +37,8 @@ import { movementLabels } from '../features/organization/attendance-labels'
 import type { Movement } from '../features/organization/types'
 import { defaultTimeZone, getTimeZoneLabel } from '../features/organization/time-zones'
 import { usePermissions } from '../features/auth/auth-context'
+import RestoreRoundedIcon from '@mui/icons-material/RestoreRounded'
+import AttendanceRecoveryDialog from '../features/synchronization/attendance-recovery-dialog'
 
 const localDayFormatter = new Intl.DateTimeFormat('es-MX', {
   timeZone: 'UTC',
@@ -186,6 +188,7 @@ function AttendancePage() {
   const movements = new Map((daily.data ?? []).flatMap((day) => day.result.punches.map((punch) => [punch.id, punch.movement] as const)))
   const [photoUser, setPhotoUser] = useState<UserPhotoReference | null>(null)
   const [importing, setImporting] = useState(false)
+  const [recovering, setRecovering] = useState(false)
   const devices = useDevices()
   const selectedDevice = devices.data?.find((device) => device.id === deviceId)
   const selectedBranch = branches.data?.find((branch) => branch.id === (branchId || selectedDevice?.branchId))
@@ -222,7 +225,10 @@ function AttendancePage() {
     <>
       <PageHeader
         action={
-          <Stack direction="row" spacing={1}>{canManagePersonnel && <Button variant="contained" startIcon={<UploadFileOutlinedIcon />} onClick={() => setImporting(true)}>Importar archivo</Button>}<Button
+          <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap' }}>{canManagePersonnel && <>
+            <Button variant="contained" startIcon={<RestoreRoundedIcon />} onClick={() => setRecovering(true)}>Recuperar ayer y hoy</Button>
+            <Button variant="outlined" startIcon={<UploadFileOutlinedIcon />} onClick={() => setImporting(true)}>Importar archivo</Button>
+          </>}<Button
             disabled={attendance.isFetching}
             onClick={() => { void attendance.refetch(); void daily.refetch() }}
             startIcon={attendance.isFetching ? <CircularProgress color="inherit" size={16} /> : <RefreshRoundedIcon />}
@@ -316,11 +322,7 @@ function AttendancePage() {
                   ? 'Prueba con otro reloj, ID de empleado en el reloj o nombre.'
                   : 'Elige otra fecha o sincroniza un reloj para consultar sus registros.'}
               </Typography>
-              {!attendance.data?.length && (
-                <Button component={RouterLink} to="/devices" variant="outlined">
-                  Ir a dispositivos
-                </Button>
-              )}
+              {!attendance.data?.length && (canManagePersonnel ? <Button startIcon={<RestoreRoundedIcon />} onClick={() => setRecovering(true)} variant="outlined">Recuperar ayer y hoy</Button> : <Button component={RouterLink} to="/employees" variant="outlined">Ir a empleados</Button>)}
             </Stack>
           </Paper>
         ) : (
@@ -349,6 +351,7 @@ function AttendancePage() {
         user={photoUser}
       />
       {importing && <AttendanceFileDialog initialBranchId={branchId || selectedDevice?.branchId || ''} initialDeviceId={deviceId} onClose={() => setImporting(false)} />}
+      {recovering && <AttendanceRecoveryDialog initialBranchId={branchId || selectedDevice?.branchId || ''} initialDeviceId={deviceId} onClose={() => setRecovering(false)} />}
     </>
   )
 }

@@ -226,7 +226,7 @@ function AttendancePage() {
       <PageHeader
         action={
           <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap' }}>{canManagePersonnel && <>
-            <Button variant="contained" startIcon={<RestoreRoundedIcon />} onClick={() => setRecovering(true)}>Recuperar ayer y hoy</Button>
+            <Button variant="contained" startIcon={<RestoreRoundedIcon />} onClick={() => setRecovering(true)}>Recuperar por fecha</Button>
             <Button variant="outlined" startIcon={<UploadFileOutlinedIcon />} onClick={() => setImporting(true)}>Importar archivo</Button>
           </>}<Button
             disabled={attendance.isFetching}
@@ -322,7 +322,7 @@ function AttendancePage() {
                   ? 'Prueba con otro reloj, ID de empleado en el reloj o nombre.'
                   : 'Elige otra fecha o sincroniza un reloj para consultar sus registros.'}
               </Typography>
-              {!attendance.data?.length && (canManagePersonnel ? <Button startIcon={<RestoreRoundedIcon />} onClick={() => setRecovering(true)} variant="outlined">Recuperar ayer y hoy</Button> : <Button component={RouterLink} to="/employees" variant="outlined">Ir a empleados</Button>)}
+              {!attendance.data?.length && (canManagePersonnel ? <Button startIcon={<RestoreRoundedIcon />} onClick={() => setRecovering(true)} variant="outlined">Recuperar por fecha</Button> : <Button component={RouterLink} to="/employees" variant="outlined">Ir a empleados</Button>)}
             </Stack>
           </Paper>
         ) : (
@@ -351,7 +351,7 @@ function AttendancePage() {
         user={photoUser}
       />
       {importing && <AttendanceFileDialog initialBranchId={branchId || selectedDevice?.branchId || ''} initialDeviceId={deviceId} onClose={() => setImporting(false)} />}
-      {recovering && <AttendanceRecoveryDialog initialBranchId={branchId || selectedDevice?.branchId || ''} initialDeviceId={deviceId} onClose={() => setRecovering(false)} />}
+      {recovering && <AttendanceRecoveryDialog initialBranchId={branchId || selectedDevice?.branchId || ''} initialDeviceId={deviceId} initialDate={selectedDate} onClose={date => { setRecovering(false); if (date) setSelectedDate(date) }} />}
     </>
   )
 }

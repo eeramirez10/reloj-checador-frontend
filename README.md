@@ -12,13 +12,13 @@ RH/admin también pueden abrir **Empresas → Asignar empleados**, filtrar por s
 
 **Mi perfil** muestra la empresa del empleado como dato de consulta. Las instrucciones de migración y publicación Windows están en `backend/docs/companies.md`.
 
-## Recuperar checadas de ayer y hoy
+## Recuperar checadas por fecha
 
-Después de recuperar la conectividad del servidor, RH/admin pueden abrir **Asistencia → Checadas → Recuperar ayer y hoy**, también disponible en **Sincronización**. Se precargan los filtros de sucursal/reloj de Checadas; puede consultarse uno o todos los relojes autorizados, secuencialmente, con progreso y resultados persistentes hasta cerrar el diálogo. **Reintentar pendientes** conserva los éxitos y vuelve a intentar los fallidos.
+Después de recuperar la conectividad del servidor, RH/admin pueden abrir **Asistencia → Checadas → Recuperar por fecha**, también disponible en **Sincronización**. **Fecha a recuperar** permite elegir un día. Desde Checadas se precargan su fecha y filtros de sucursal/reloj; desde Sincronización se propone hoy. Puede consultarse uno o todos los relojes autorizados, secuencialmente, con progreso y resultados hasta cerrar el diálogo. **Reintentar pendientes** conserva los éxitos y vuelve a intentar los fallidos del mismo día; cambiar la fecha o los filtros limpia los resultados anteriores.
 
-Se lee toda la información disponible en cada reloj, también la anterior a ayer; únicamente se guardan eventos nuevos y se recalcula asistencia, tarjetas y extras. Los conteos son de la descarga completa, con fechas de referencia en la zona de cada reloj. Una lectura vacía se distingue de una recuperación con registros. Repetir no duplica ni elimina el histórico.
+El equipo puede enviar toda su información, pero el backend guarda únicamente eventos nuevos de la fecha elegida en la zona de cada reloj. **Leídas del día** y **Nuevas del día** cuentan solo esa fecha. Una lectura sin coincidencias se distingue de una recuperación con registros. Repetir no duplica ni elimina el histórico. Se recalculan asistencia, tarjetas y extras con las marcas ya guardadas; para completar una ruta entre días, recuperar también el otro día si faltan sus registros.
 
-**Actualizar** consulta la base; **Recuperar ayer y hoy** se conecta al reloj. Sincronización muestra ahora el historial real con tipo, estado, conteos y errores, incluidos avances parciales. No hay reintentos automáticos; ante un timeout, consultar ese historial antes de repetir. La guía está en `backend/docs/attendance-recovery.md`.
+**Actualizar** consulta la base; **Recuperar por fecha** se conecta al reloj. Sincronización muestra el historial real con tipo, estado, conteos y errores, incluidos avances parciales. No hay reintentos automáticos; ante un timeout, consultar ese historial antes de repetir. Publicar también el backend actualizado, que valida y aplica el filtro por día. La guía está en `backend/docs/attendance-recovery.md`.
 
 ## Limpieza de registros pendientes
 

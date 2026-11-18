@@ -27,8 +27,8 @@ export function useAttendanceRecovery() {
     setResults(current => current.map(item => item.deviceId === result.deviceId ? result : item))
   }
 
-  async function recover(deviceIds: string[]) {
-    if (controller.current || !deviceIds.length) return
+  async function recover(deviceIds: string[], date: string) {
+    if (controller.current || !deviceIds.length || !date) return
     const operation = new AbortController()
     controller.current = operation
     setBusy(true)
@@ -38,7 +38,7 @@ export function useAttendanceRecovery() {
         if (operation.signal.aborted) break
         update({ deviceId, status: 'running' })
         try {
-          const run = await syncDeviceAttendance(deviceId, operation.signal)
+          const run = await syncDeviceAttendance(deviceId, operation.signal, date)
           if (!operation.signal.aborted) update({ deviceId, status: 'succeeded', run })
         } catch (error) {
           if (operation.signal.aborted) break

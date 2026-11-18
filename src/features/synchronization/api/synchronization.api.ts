@@ -40,9 +40,9 @@ export async function getSyncRuns(deviceId?: string, signal?: AbortSignal): Prom
   return response.data
 }
 
-export async function syncDeviceAttendance(deviceId: string, signal?: AbortSignal): Promise<SyncRun> {
-  const response = await httpClient.post<SyncRun>(`/devices/${deviceId}/sync-attendance`, {}, { timeout: 180_000, signal })
-  if (!isSyncRun(response.data) || response.data.deviceId !== deviceId || response.data.status !== 'succeeded') {
+export async function syncDeviceAttendance(deviceId: string, signal?: AbortSignal, date?: string): Promise<SyncRun> {
+  const response = await httpClient.post<SyncRun & { date?: string }>(`/devices/${deviceId}/sync-attendance`, date ? { date } : {}, { timeout: 180_000, signal })
+  if (!isSyncRun(response.data) || response.data.deviceId !== deviceId || response.data.status !== 'succeeded' || (date && response.data.date !== date)) {
     throw new Error('No se pudo confirmar la sincronización. Consulta el historial antes de volver a intentarlo.')
   }
   return response.data
